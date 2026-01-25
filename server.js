@@ -20,11 +20,12 @@ const path = require('path');
 const app = express();
 const PORT = 3001;
 const DB_FILE = path.join(__dirname, 'database.json');
+const STORES_FILE = path.join(__dirname, 'stores.json');
 
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' })); // Support large data
 
-// Helper to read DB
+// Helper to read DB (Projects)
 const readDb = () => {
     if (!fs.existsSync(DB_FILE)) {
         return [];
@@ -38,9 +39,28 @@ const readDb = () => {
     }
 };
 
-// Helper to write DB
+// Helper to write DB (Projects)
 const writeDb = (data) => {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+};
+
+// Helper to read Stores
+const readStores = () => {
+    if (!fs.existsSync(STORES_FILE)) {
+        return [];
+    }
+    try {
+        const data = fs.readFileSync(STORES_FILE, 'utf8');
+        return JSON.parse(data);
+    } catch (e) {
+        console.error("Error reading Stores DB", e);
+        return [];
+    }
+};
+
+// Helper to write Stores
+const writeStores = (data) => {
+    fs.writeFileSync(STORES_FILE, JSON.stringify(data, null, 2));
 };
 
 // Status Check
@@ -62,6 +82,23 @@ app.post('/api/projects', (req, res) => {
     }
     writeDb(projects);
     console.log(`Saved ${projects.length} projects at ${new Date().toLocaleTimeString()}`);
+    res.json({ success: true });
+});
+
+// GET All Stores
+app.get('/api/stores', (req, res) => {
+    const stores = readStores();
+    res.json(stores);
+});
+
+// SAVE All Stores (Full Sync)
+app.post('/api/stores', (req, res) => {
+    const stores = req.body;
+    if (!Array.isArray(stores)) {
+        return res.status(400).json({ error: "Expected array of stores" });
+    }
+    writeStores(stores);
+    console.log(`Saved ${stores.length} stores at ${new Date().toLocaleTimeString()}`);
     res.json({ success: true });
 });
 

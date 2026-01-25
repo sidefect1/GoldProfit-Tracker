@@ -68,6 +68,10 @@ export interface Store {
   goldPrice24k: number;
   createdAt: number;
   updatedAt: number;
+  // Audit Fields
+  lastEditorName?: string;
+  lastEditorId?: string;
+  dbUpdatedAt?: number; // From DB updated_at column
 }
 
 export interface ProjectSettings {
@@ -82,6 +86,11 @@ export interface ProjectSettings {
   isSetupComplete?: boolean; // New: Setup Wizard Completion Flag
   activePriceBookId?: string;
   
+  // Audit Fields
+  lastEditorName?: string;
+  lastEditorId?: string;
+  dbUpdatedAt?: number; // From DB updated_at column
+
   // Configuration
   activeKarats: KaratEnum[];
 

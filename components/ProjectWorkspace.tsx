@@ -12,7 +12,8 @@ import { Tooltip } from './Tooltip';
 import { KARATS, getSizesForProduct, PRODUCT_CONFIGS } from '../constants';
 import { ProjectSettings, KaratEnum, CalculationResult, PriceBook, MarketplaceRates, ProjectSnapshot } from '../types';
 import { calculateRow, formatCurrency, formatDate } from '../utils/calculations';
-import { Sliders, Info, Calculator, TrendingUp, BookOpen, ShoppingBag, CheckCircle, RefreshCcw, Save, Play, AlertTriangle, Lock, ChevronDown, Check, Tag, Globe, ZoomIn, ZoomOut, Pause, Bug } from 'lucide-react';
+import { Sliders, Info, Calculator, TrendingUp, BookOpen, ShoppingBag, CheckCircle, RefreshCcw, Save, Play, AlertTriangle, Lock, ChevronDown, Check, Tag, Globe, ZoomIn, ZoomOut, Pause, Bug, Users } from 'lucide-react';
+import { supabase } from '../utils/supabaseClient';
 
 interface ProjectWorkspaceProps {
   project: ProjectSettings;
@@ -21,6 +22,8 @@ interface ProjectWorkspaceProps {
   globalGoldPrice: number;
   marketplaceRates: MarketplaceRates;
 }
+
+// ... (ProfitModeMenu and DebugOverlay components remain unchanged) ...
 
 const ProfitModeMenu = ({ 
     isOpen, 
@@ -84,10 +87,7 @@ const ProfitModeMenu = ({
 
     const content = (
         <div className="relative z-[9999]">
-             {/* Backdrop */}
              <div className="fixed inset-0 bg-black/5 cursor-default backdrop-blur-[1px]" onClick={onClose} />
-             
-             {/* Menu */}
              <div 
                 className={`fixed bg-white shadow-2xl border border-gray-100 p-2 animate-in duration-200 ${
                     isMobile 
@@ -136,10 +136,8 @@ const ProfitModeMenu = ({
     return createPortal(content, document.body);
 };
 
-// --- DEBUG OVERLAY COMPONENT ---
 const DebugOverlay = ({ data }: { data: CalculationResult | null }) => {
     if (!data || !data._debug) return null;
-
     return (
         <div className="fixed bottom-4 right-4 bg-gray-900 text-white rounded-lg p-4 shadow-2xl z-50 text-xs font-mono max-w-xs animate-in slide-in-from-bottom-2">
             <div className="flex justify-between items-center mb-2 border-b border-gray-700 pb-1">
@@ -180,7 +178,64 @@ const DebugOverlay = ({ data }: { data: CalculationResult | null }) => {
     );
 }
 
+// Presence Component
+const PresenceBar = ({ projectId }: { projectId: string }) => {
+    const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
+
+    useEffect(() => {
+        const channel = supabase.channel(`presence:project:${projectId}`, {
+            config: { presence: { key: projectId } }
+        });
+
+        channel
+            .on('presence', { event: 'sync' }, () => {
+                const state = channel.presenceState();
+                const users: any[] = [];
+                for (const key in state) {
+                    users.push(...state[key]);
+                }
+                setOnlineUsers(users);
+            })
+            .subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    const { data } = await supabase.auth.getSession();
+                    const user = data.session?.user;
+                    if (user) {
+                         const name = user.user_metadata?.display_name || user.email?.split('@')[0] || 'Unknown';
+                         await channel.track({ user_id: user.id, name, at: Date.now() });
+                    }
+                }
+            });
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [projectId]);
+
+    if (onlineUsers.length <= 1) return null; // Don't show if only me
+
+    return (
+        <div className="bg-blue-50 border-b border-blue-100 px-4 py-1.5 flex items-center justify-center gap-3 animate-in slide-in-from-top-2">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-700 uppercase tracking-wide">
+                <Users size={12} />
+                <span>Active now:</span>
+            </div>
+            <div className="flex -space-x-1.5">
+                {onlineUsers.map((u: any, i) => (
+                    <div key={i} className="w-5 h-5 rounded-full bg-blue-200 border border-white flex items-center justify-center text-[8px] font-bold text-blue-800" title={u.name}>
+                        {u.name?.charAt(0).toUpperCase()}
+                    </div>
+                ))}
+            </div>
+            <span className="text-[10px] text-blue-500 font-medium">
+                {onlineUsers.map(u => u.name).join(', ')}
+            </span>
+        </div>
+    );
+};
+
 export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: settings, onUpdate: setSettings, onBack, globalGoldPrice, marketplaceRates }) => {
+  // ... (Existing state hooks remain unchanged) ...
   const sortedActiveKarats = useMemo(() => {
     const current = settings.activeKarats || KARATS;
     return KARATS.filter(k => current.includes(k));
@@ -200,23 +255,18 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
   const [isCalibrationOpen, setIsCalibrationOpen] = useState(false);
   const [isPurityModalOpen, setIsPurityModalOpen] = useState(false);
   
-  // MONITOR SUB-MODES (Etsy Only)
   const [monitorSubMode, setMonitorSubMode] = useState<'standard' | 'coupon' | 'offsite'>('standard');
   const [isMonitorMenuOpen, setIsMonitorMenuOpen] = useState(false);
   const monitorMenuRef = useRef<HTMLButtonElement>(null);
 
-  // SIMULATION TOGGLE & ZOOM
   const [showSimulation, setShowSimulation] = useState(false);
-  const [gridZoom, setGridZoom] = useState(1); // 0: Compact, 1: Normal, 2: Large
+  const [gridZoom, setGridZoom] = useState(1); 
   const [highlightedCoords, setHighlightedCoords] = useState<{r: number, c: number} | null>(null);
   
-  // Simulation Values
-  const [simulationPct, setSimulationPct] = useState<number>(0); // Percentage increase (0-100)
+  const [simulationPct, setSimulationPct] = useState<number>(0); 
   
-  // Debug Toggle
   const [showDebug, setShowDebug] = useState(false);
 
-  // Reset sub-mode if marketplace changes to shopify
   useEffect(() => {
       if (settings.marketplace === 'shopify') {
           setMonitorSubMode('standard');
@@ -248,7 +298,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
       if (activeTab === 'monitor' && !selectedBookId && settings.activePriceBookId) {
           setSelectedBookId(settings.activePriceBookId);
       }
-      // Reset simulation when switching tabs
       if (activeTab !== 'monitor') {
           setSimulationPct(0);
           setShowSimulation(false);
@@ -266,13 +315,11 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
     let minP = Infinity, maxP = -Infinity, totalP = 0, count = 0;
     let minLabel = '', maxLabel = '';
     
-    // Break-even Stats
     let maxBreakEvenDelta = 0;
     let maxBreakEvenLabel = '';
     let totalBreakEvenDelta = 0;
 
     let lockedBook: PriceBook | undefined;
-    // CRITICAL FIX: Use Locked Book for Marketplace as well as Monitor
     if ((activeTab === 'monitor' || activeTab === 'marketplace') && selectedBookId) {
        lockedBook = settings.priceBooks.find(b => b.id === selectedBookId);
     }
@@ -283,10 +330,8 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
 
     sizesToIterate.forEach(size => {
       settings.widths.forEach(width => {
-        
         let targetPercent = 0;
-        // Retrieve scoped strategy to calculate variable percent step
-        const profitConfig = settings.profitStrategyByKarat?.[activeKarat]; // Use ACTIVE KARAT config for the grid being calculated
+        const profitConfig = settings.profitStrategyByKarat?.[activeKarat]; 
         
         if (profitConfig && profitConfig.variableProfit) {
             const startP = profitConfig.variableProfit.percentAtMin; 
@@ -305,7 +350,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
            const originalPrice = lockedBook.prices[key];
            
            if (originalPrice !== undefined) {
-               // Apply Simulation Percentage ONLY in Monitor mode if active
                let simulatedPrice = originalPrice;
                if (activeTab === 'monitor' && simulationPct > 0) {
                    simulatedPrice = originalPrice * (1 + (simulationPct / 100));
@@ -315,13 +359,7 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
         }
 
         const overrideGold = activeTab === 'monitor' ? globalGoldPrice : undefined;
-        
-        // Pass snapshot if in monitor/marketplace mode and book is locked
         let snapshot = (activeTab === 'monitor' || activeTab === 'marketplace') && lockedBook ? lockedBook.snapshot : undefined;
-        
-        // CRITICAL: Force 'standard' mode if we are viewing the Marketplace tab.
-        // Marketplace tab should ALWAYS show the List Prices derived from Standard Base Price.
-        // It should NOT be affected by Coupon or Offsite simulations active in Monitor tab.
         const profitModeToUse = activeTab === 'marketplace' ? 'standard' : monitorSubMode;
 
         const row = calculateRow(
@@ -334,24 +372,19 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
             targetPercent, 
             marketplaceRates, 
             snapshot,
-            profitModeToUse // Pass explicitly determined profit mode
+            profitModeToUse 
         );
         data.push(row);
 
         if (row.profitUSD < minP) {
           minP = row.profitUSD;
-          minLabel = settings.productType === 'EARRING' 
-            ? `${width} (Style)`
-            : `${width}mm / ${size}`;
+          minLabel = settings.productType === 'EARRING' ? `${width} (Style)` : `${width}mm / ${size}`;
         }
         if (row.profitUSD > maxP) {
           maxP = row.profitUSD;
-          maxLabel = settings.productType === 'EARRING' 
-            ? `${width} (Style)`
-            : `${width}mm / ${size}`;
+          maxLabel = settings.productType === 'EARRING' ? `${width} (Style)` : `${width}mm / ${size}`;
         }
         
-        // Track Worst Break-even gap
         if (row.breakEvenDelta > maxBreakEvenDelta) {
             maxBreakEvenDelta = row.breakEvenDelta;
             maxBreakEvenLabel = settings.productType === 'EARRING' ? `${width}` : `${width}mm / ${size}`;
@@ -375,11 +408,11 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
     };
   }, [settings, activeKarat, activeTab, selectedBookId, rowSizes, globalGoldPrice, marketplaceRates, simulationPct, monitorSubMode]);
 
-  // Derived Book Info
   const activeBook = settings.priceBooks.find(b => b.id === selectedBookId);
 
+  // ... (Save Handlers same as before) ...
   const handleSaveBook = (nameOrId: string) => {
-    // Determine snapshot data from current settings
+    // ... same logic ...
     const snapshot: ProjectSnapshot = {
         date: Date.now(),
         laborModel: settings.laborModel,
@@ -394,7 +427,7 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
         referenceExactWeights: settings.referenceExactWeights ? { ...settings.referenceExactWeights } : undefined,
         marketplaceRates: { ...marketplaceRates },
         profitStrategyByKarat: { ...settings.profitStrategyByKarat },
-        marketplaceDiscount: settings.marketplaceDiscount // Snapshot the discount used for list prices
+        marketplaceDiscount: settings.marketplaceDiscount 
     };
 
     const prices: Record<string, number> = {};
@@ -402,10 +435,8 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
     const totalSteps = sizes.length * settings.widths.length;
 
     sortedActiveKarats.forEach(karat => {
-      // Loop for EACH karat to use correct scoped settings
       const profitConfig = settings.profitStrategyByKarat?.[karat];
       let stepIndex = 0;
-      
       sizes.forEach(size => {
         settings.widths.forEach(width => {
            let targetPercent = 0;
@@ -473,7 +504,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
 
   const handleOverwriteBook = () => {
       if (!settings.activePriceBookId) return;
-      
       const snapshot: ProjectSnapshot = {
         date: Date.now(),
         laborModel: settings.laborModel,
@@ -488,7 +518,7 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
         referenceExactWeights: settings.referenceExactWeights ? { ...settings.referenceExactWeights } : undefined,
         marketplaceRates: { ...marketplaceRates },
         profitStrategyByKarat: { ...settings.profitStrategyByKarat },
-        marketplaceDiscount: settings.marketplaceDiscount // Snapshot the discount used for list prices
+        marketplaceDiscount: settings.marketplaceDiscount 
       };
 
       const prices: Record<string, number> = {};
@@ -525,7 +555,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
           }
           return b;
       });
-
       setSettings({ ...settings, priceBooks: updatedBooks });
   };
 
@@ -565,11 +594,11 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
       } else {
           newOverrides[key] = newPrice;
       }
-      
       setSettings({ ...settings, priceOverrides: newOverrides });
   };
 
   const handleExport = () => {
+    // ... same export logic
     const headers = ['Karat', productConfig.widthLabel, productConfig.sizeLabel, 'Weight(g)', 'Metal Cost', 'Labor', 'Other Costs', 'Total Cost', 'Sale Price', 'Profit($)', 'Profit(%)'];
     const rows = gridData.cells.map(c => [
       c.karat, c.width, c.size, c.estimatedGram.toFixed(2), c.metalCost.toFixed(2), c.laborCost.toFixed(2), c.otherCosts.toFixed(2), c.totalCost.toFixed(2), c.salePrice.toFixed(2), c.profitUSD.toFixed(2), (c.profitPercent).toFixed(2) + '%'
@@ -613,7 +642,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
       return 'Monitor Profit';
   };
 
-  // Zoom Levels: 0=Compact, 1=Normal, 2=Comfortable
   const handleZoom = (direction: 'in' | 'out') => {
       setGridZoom(prev => {
           if (direction === 'in') return Math.min(2, prev + 1);
@@ -632,23 +660,23 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
         onOverwriteBook={handleOverwriteBook}
         globalGoldPrice={globalGoldPrice} 
         marketplaceRates={marketplaceRates} 
-        selectedKarat={activeKarat} // PASS ACTIVE KARAT FOR SCOPED EDITING
+        selectedKarat={activeKarat} 
       />
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
         <ProjectHeader settings={settings} updateSettings={setSettings} onBack={onBack} marketplaceRates={marketplaceRates} />
+        
+        {/* Presence Bar */}
+        <PresenceBar projectId={settings.id} />
 
         {/* --- MAIN TOOLBAR & TABS --- */}
         <div className={`border-b border-gray-200 px-4 md:px-6 py-3 flex items-center justify-between shadow-sm z-20 transition-colors duration-300 ${activeTab === 'monitor' ? 'bg-emerald-50/50' : (activeTab === 'marketplace' ? 'bg-indigo-50/50' : 'bg-white')}`}>
-            
+            {/* ... Toolbar Content Same as Before ... */}
             <div className="flex items-center gap-4 overflow-visible">
-                {/* Tab Switcher */}
                 <div className="bg-gray-100/80 p-1 rounded-xl flex shadow-inner shrink-0">
                     <button onClick={() => setActiveTab('builder')} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-extrabold uppercase tracking-wide transition-all whitespace-nowrap ${activeTab === 'builder' ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'}`}>
                         <Calculator size={14} /> Build Prices
                     </button>
-                    
-                    {/* Monitor Dropdown Tab */}
                     {settings.marketplace === 'etsy' ? (
                         <>
                             <button 
@@ -660,7 +688,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
                                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-extrabold uppercase tracking-wide transition-all whitespace-nowrap ${activeTab === 'monitor' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200' : 'text-gray-500 hover:text-emerald-700 hover:bg-emerald-100/50'}`}>
                                 <TrendingUp size={14} /> {getMonitorTabLabel()} {activeTab === 'monitor' && <ChevronDown size={12} className={`ml-1 transition-transform ${isMonitorMenuOpen ? 'rotate-180' : ''}`} />}
                             </button>
-                            
                             <ProfitModeMenu 
                                 isOpen={isMonitorMenuOpen}
                                 onClose={() => setIsMonitorMenuOpen(false)}
@@ -677,13 +704,11 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
                             <TrendingUp size={14} /> Monitor Profit
                         </button>
                     )}
-
                     <button onClick={() => setActiveTab('marketplace')} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-extrabold uppercase tracking-wide transition-all whitespace-nowrap ${activeTab === 'marketplace' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'text-gray-500 hover:text-indigo-700 hover:bg-indigo-100/50'}`}>
                         <ShoppingBag size={14} /> Market
                     </button>
                 </div>
 
-                {/* Active Book Header (Replaces dropdown visual) */}
                 {(activeTab === 'monitor' || activeTab === 'marketplace') && (
                     <div className="hidden md:flex flex-col ml-2 border-l border-emerald-200 pl-4 h-9 justify-center">
                         <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-800/60 leading-none mb-1">
@@ -716,7 +741,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
                 )}
             </div>
             
-            {/* Simulation & Debug Toggle Button */}
             <div className="flex items-center gap-2">
                 {activeTab === 'monitor' && (
                     <>
@@ -728,7 +752,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
                             {showSimulation ? 'Simulation ON' : 'Simulation'}
                         </button>
                         
-                        {/* Debug Toggle - Monitor Mode Only */}
                         <button 
                             onClick={() => setShowDebug(!showDebug)}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${showDebug ? 'bg-gray-800 text-green-400 border-gray-700' : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300'}`}
@@ -739,16 +762,13 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
                     </>
                 )}
             </div>
-            
             {activeTab !== 'monitor' && <HeatmapLegend />}
         </div>
 
-        {/* --- SIMULATION TOOLBAR (Collapsible) --- */}
+        {/* ... (Rest of workspace: Simulation, Grid, Wizard, etc. - kept intact) ... */}
         {activeTab === 'monitor' && showSimulation && (
             <div className="bg-amber-50/50 border-b border-amber-100 px-4 py-3 animate-in slide-in-from-top-2">
                 <div className="flex flex-wrap items-center justify-between gap-4">
-                    
-                    {/* Controls Cluster */}
                     <div className="flex flex-wrap items-center gap-4">
                         <div className="flex items-center gap-2">
                              <span className="text-xs font-bold text-amber-800">Price Increase</span>
@@ -770,9 +790,7 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
                                 Base +{simulationPct}%
                             </span>
                         )}
-                        
                         <div className="h-4 w-px bg-amber-200 mx-2"></div>
-                        
                         <div className="flex items-center gap-1 text-[10px] text-amber-700">
                            <Info size={12} />
                            {monitorSubMode === 'standard' && <span>Viewing Standard Profit</span>}
@@ -780,8 +798,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
                            {monitorSubMode === 'offsite' && <span>Simulating {settings.offsiteAdsPercent ?? 15}% Ads Fee</span>}
                         </div>
                     </div>
-
-                    {/* Actions Cluster */}
                     <div className="flex items-center gap-2 w-full md:w-auto">
                         {simulationPct !== 0 && (
                             <button 
@@ -803,7 +819,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
             </div>
         )}
 
-        {/* Marketplace Source Banner */}
         {activeTab === 'marketplace' && selectedBookId && (
             <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-2 flex items-center justify-center gap-2 text-xs text-indigo-800 font-medium">
                 <Lock size={12} className="text-indigo-500" />
@@ -812,7 +827,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
         )}
 
         <main className={`flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth ${activeTab === 'monitor' ? 'bg-emerald-50/20' : (activeTab === 'marketplace' ? 'bg-indigo-50/20' : 'bg-gray-50/50')}`}>
-          {/* ... existing content ... */}
           <div className="mb-6 space-y-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0">
@@ -824,10 +838,7 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
                 <button onClick={() => setIsPurityModalOpen(true)} className="p-2.5 bg-white border border-gray-200 rounded-lg text-gray-400 hover:text-blue-600 hover:border-blue-300 transition-all shadow-sm group shrink-0" title="View Purity Standards"><Info size={16} className="group-hover:scale-110 transition-transform" /></button>
               </div>
 
-              {/* Toolbar Actions: Zoom, Calibrate, View Mode (Save Removed) */}
               <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 md:pb-0">
-                    
-                    {/* View Controls Group */}
                     <div className="bg-white rounded-lg border border-gray-200 p-1 flex items-center gap-1 shadow-sm">
                         <button onClick={() => handleZoom('out')} className={`p-1.5 rounded hover:bg-gray-100 ${gridZoom === 0 ? 'text-gray-300' : 'text-gray-500'}`} disabled={gridZoom===0}><ZoomOut size={14}/></button>
                         <span className="text-[10px] font-bold text-gray-400 w-4 text-center">{gridZoom === 0 ? 'S' : (gridZoom === 1 ? 'M' : 'L')}</span>
@@ -853,8 +864,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
                <SummaryCard title="Lowest Profit" value={gridData.stats.min.val} subtext={gridData.stats.min.label} type="min" />
                <SummaryCard title="Average Profit" value={gridData.stats.avg.val} subtext="Across all sizes" type="avg" />
                <SummaryCard title="Highest Profit" value={gridData.stats.max.val} subtext={gridData.stats.max.label} type="max" />
-               
-               {/* Break-Even Card */}
                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-start gap-3">
                    <div className="p-2 rounded-lg bg-orange-50 text-orange-600">
                         <TrendingUp size={24} />
@@ -871,7 +880,9 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
                </div>
             </div>
           </div>
-
+          
+          {/* ... (Grid Render logic same as before) ... */}
+          {/* Re-use existing grid rendering logic from previous version */}
           {settings.productType === 'EARRING' ? (
               <div className="space-y-4">
                   {sortedActiveKarats.map(karat => (
@@ -969,18 +980,16 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ project: set
         </main>
       </div>
       
-      {/* SETUP WIZARD (AUTO TRIGGERED IF INCOMPLETE) */}
       {!settings.isSetupComplete && (
           <SetupWizard 
               project={settings} 
               onUpdate={setSettings} 
-              onClose={onBack} // If they cancel wizard, go back to list
+              onClose={onBack} 
           />
       )}
 
       {tooltipState.id && tooltipState.data && tooltipState.rect && <Tooltip data={tooltipState.data} targetRect={tooltipState.rect} />}
       
-      {/* DEBUG OVERLAY */}
       {showDebug && activeTab === 'monitor' && <DebugOverlay data={tooltipState.data || null} />}
 
       <CalibrationModal isOpen={isCalibrationOpen} onClose={handleCalibrationClose} settings={settings} updateSettings={setSettings} activeKarat={activeKarat} />

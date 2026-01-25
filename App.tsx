@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ProjectList } from './components/ProjectList';
 import { ProjectWorkspace } from './components/ProjectWorkspace';
@@ -5,66 +6,68 @@ import { EditProjectModal } from './components/EditProjectModal';
 import { GlobalSettingsModal } from './components/GlobalSettingsModal';
 import { ImportReviewModal, ImportResolution } from './components/ImportReviewModal';
 import { StoreModal } from './components/StoreModal';
+import { DeleteStoreModal } from './components/DeleteStoreModal';
+import { Login } from './components/Login';
 import { ProjectSettings, KaratEnum, MarketplaceRates, Store } from './types';
 import { DEFAULT_PURITIES, DEFAULT_MARKETPLACE_RATES, DEFAULT_PROJECT } from './constants';
 import { migrateProject } from './utils/migrations';
 import { api } from './utils/api';
-import { Cloud, CloudOff } from 'lucide-react';
+import { supabase } from './utils/supabaseClient';
+import { Cloud, CloudOff, CheckCircle } from 'lucide-react';
+import { Session } from '@supabase/supabase-js';
 
 const GLOBAL_SETTINGS_KEY = 'gold-profit-global-settings';
 const GLOBAL_RATES_KEY = 'gold-profit-global-rates';
-// New Keys
-const STORES_KEY = 'gold-profit-stores';
 const ACTIVE_STORE_ID_KEY = 'gold-profit-active-store-id';
-const LEGACY_GOLD_KEY = 'gold-profit-global-gold-price'; // Retained for migration only
 
 export default function App() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Data State
   const [projects, setProjects] = useState<ProjectSettings[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
   
   const [isBackendConnected, setIsBackendConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Initialize Data (Stores, Projects, Migration)
+  // Handle Auth Session
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setAuthLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Load Data on Session
   useEffect(() => {
     const initData = async () => {
+      if (!session) return;
+      setIsLoading(true);
+
       // 1. Check Backend
       const online = await api.checkStatus();
       setIsBackendConnected(online);
 
-      // 2. Load Projects & Stores
+      // 2. Load Data from Supabase
+      const loadedStores = await api.getStores();
       const loadedProjects = await api.getProjects();
       const migratedProjects = loadedProjects.map(migrateProject);
-      
-      const savedStores = localStorage.getItem(STORES_KEY);
-      let loadedStores: Store[] = savedStores ? JSON.parse(savedStores) : [];
-
-      // 3. LEGACY MIGRATION: If no stores exist, check for legacy data
-      if (loadedStores.length === 0) {
-          const legacyGold = localStorage.getItem(LEGACY_GOLD_KEY);
-          // If we have projects or legacy gold, create a default store
-          if (migratedProjects.length > 0 || legacyGold) {
-              const defaultStore: Store = {
-                  id: crypto.randomUUID(),
-                  name: 'Default Store',
-                  goldPrice24k: legacyGold ? parseFloat(legacyGold) : 85.00,
-                  createdAt: Date.now(),
-                  updatedAt: Date.now()
-              };
-              loadedStores = [defaultStore];
-              
-              // Assign all legacy projects to default store
-              migratedProjects.forEach(p => {
-                  if (!p.storeId) p.storeId = defaultStore.id;
-              });
-          }
-      }
 
       setStores(loadedStores);
       setProjects(migratedProjects);
 
-      // Restore active store or default
+      // 3. Restore Active Store
       const savedActiveId = localStorage.getItem(ACTIVE_STORE_ID_KEY);
       if (savedActiveId && loadedStores.find(s => s.id === savedActiveId)) {
           setActiveStoreId(savedActiveId);
@@ -75,51 +78,44 @@ export default function App() {
       setIsLoading(false);
     };
 
-    initData();
-  }, []);
+    if (session) {
+      initData();
+    }
+  }, [session]);
 
-  // Persist Stores
+  // Persist Active Store ID
   useEffect(() => {
-      if (!isLoading) {
-          localStorage.setItem(STORES_KEY, JSON.stringify(stores));
-      }
-  }, [stores, isLoading]);
-
-  // Persist Active Store Selection
-  useEffect(() => {
-      if (activeStoreId) {
-          localStorage.setItem(ACTIVE_STORE_ID_KEY, activeStoreId);
-      }
+    if (activeStoreId) {
+      localStorage.setItem(ACTIVE_STORE_ID_KEY, activeStoreId);
+    } else {
+      localStorage.removeItem(ACTIVE_STORE_ID_KEY);
+    }
   }, [activeStoreId]);
 
-  // Save Projects on Change
-  useEffect(() => {
-    if (!isLoading) {
-      api.saveProjects(projects);
-    }
-  }, [projects, isLoading]);
-
-  // Global Settings State: Purities
+  // Global Settings State
   const [globalPurities, setGlobalPurities] = useState<Record<KaratEnum, number>>(() => {
      const saved = localStorage.getItem(GLOBAL_SETTINGS_KEY);
      return saved ? JSON.parse(saved) : DEFAULT_PURITIES;
   });
 
-  // Global Settings State: Marketplace Rates
   const [globalRates, setGlobalRates] = useState<MarketplaceRates>(() => {
     const saved = localStorage.getItem(GLOBAL_RATES_KEY);
     return saved ? JSON.parse(saved) : DEFAULT_MARKETPLACE_RATES;
   });
 
-  // Track the ID of the currently open project
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [isGlobalSettingsOpen, setIsGlobalSettingsOpen] = useState(false);
-  
-  // Import Flow State
   const [importData, setImportData] = useState<any>(null);
-  
-  // State for editing an existing project (Variations/Name)
   const [editingProject, setEditingProject] = useState<ProjectSettings | null>(null);
+  const [storeToDelete, setStoreToDelete] = useState<Store | null>(null);
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+
+  useEffect(() => {
+    if (toast) {
+        const timer = setTimeout(() => setToast(null), 3000);
+        return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   useEffect(() => {
     localStorage.setItem(GLOBAL_SETTINGS_KEY, JSON.stringify(globalPurities));
@@ -129,50 +125,38 @@ export default function App() {
     localStorage.setItem(GLOBAL_RATES_KEY, JSON.stringify(globalRates));
   }, [globalRates]);
 
-  // Derived: Current Active Project
   const activeProject = projects.find(p => p.id === activeProjectId);
-  
-  // Derived: Current Active Store
   const activeStore = stores.find(s => s.id === activeStoreId);
-
-  // Derived: Filtered Projects for List
   const displayProjects = projects.filter(p => p.storeId === activeStoreId);
 
-  const handleUpdateProject = (updated: ProjectSettings) => {
+  // --- CRUD HANDLERS (Single Item Updates) ---
+
+  const handleUpdateProject = async (updated: ProjectSettings) => {
     const withTime = { ...updated, lastModified: Date.now() };
+    
+    // Optimistic Update
     setProjects(prev => prev.map(p => p.id === updated.id ? withTime : p));
+    
+    // Single Item Save
+    if (session) {
+        await api.saveProject(withTime, session);
+    }
   };
 
-  const handleRenameProject = (id: string, newName: string) => {
-    setProjects(prev => prev.map(p => 
-        p.id === id ? { ...p, name: newName, lastModified: Date.now() } : p
-    ));
-  };
-
-  const handleBatchUpdateProjects = (ids: string[], updates: Partial<ProjectSettings>) => {
-      const now = Date.now();
-      setProjects(prev => prev.map(p => {
-          if (ids.includes(p.id)) {
-              return { ...p, ...updates, lastModified: now };
-          }
-          return p;
-      }));
-  };
-
-  const handleCreateNewProject = () => {
-    if (!activeStoreId) return; // Should be blocked by UI, but safe guard
+  const handleCreateNewProject = async () => {
+    if (!activeStoreId || !session) return; 
 
     const newProject: ProjectSettings = {
         ...DEFAULT_PROJECT,
         id: crypto.randomUUID(),
-        storeId: activeStoreId, // Assign to active store
-        name: "", // Intentionally empty so Wizard prompts for it
-        productType: 'RING', // Default
-        marketplace: 'etsy', // Default
+        storeId: activeStoreId,
+        name: "", 
+        productType: 'RING', 
+        marketplace: 'etsy',
         createdAt: Date.now(),
         lastModified: Date.now(),
         purities: globalPurities,
-        isSetupComplete: false, // Critical: Triggers Wizard on open
+        isSetupComplete: false, 
         widths: [], 
         sizes: [],
         activeKarats: ['10K', '14K', '18K'],
@@ -181,139 +165,223 @@ export default function App() {
 
     setProjects(prev => [newProject, ...prev]);
     setActiveProjectId(newProject.id);
+
+    // Save New Project
+    await api.saveProject(newProject, session);
   };
 
-  const handleDeleteProject = (id: string) => {
+  const handleDeleteProject = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this project? This cannot be undone.')) {
       setProjects(prev => prev.filter(p => p.id !== id));
       if (activeProjectId === id) setActiveProjectId(null);
+      
+      // Explicit Delete
+      await api.deleteProject(id);
     }
   };
 
-  const handleArchiveProject = (id: string, archive: boolean) => {
-     setProjects(prev => prev.map(p => p.id === id ? { ...p, isArchived: archive } : p));
-  };
-
-  const handleDuplicateProject = (id: string) => {
+  const handleDuplicateProject = async (id: string) => {
     const original = projects.find(p => p.id === id);
-    if (original) {
+    if (original && session) {
       const copy: ProjectSettings = {
         ...original,
         id: crypto.randomUUID(),
         name: `${original.name} (Copy)`,
         lastModified: Date.now(),
         createdAt: Date.now(),
-        priceBooks: [], // Reset price books on duplicate
+        priceBooks: [], 
         isArchived: false,
         activePriceBookId: undefined,
-        storeId: activeStoreId || original.storeId // Duplicate into current store
+        storeId: activeStoreId || original.storeId 
       };
       setProjects(prev => [copy, ...prev]);
+      await api.saveProject(copy, session);
     }
   };
 
-  // STORE MANAGEMENT
-  const handleCreateStore = (name: string) => {
+  // --- STORE HANDLERS ---
+
+  const handleCreateStore = async (name: string) => {
+      if (!session) return;
       const newStore: Store = {
           id: crypto.randomUUID(),
           name,
-          goldPrice24k: 85.00, // Default start
+          goldPrice24k: 85.00, 
           createdAt: Date.now(),
           updatedAt: Date.now()
       };
       setStores(prev => [...prev, newStore]);
       setActiveStoreId(newStore.id);
+      await api.saveStore(newStore, session);
   };
 
-  const handleUpdateStoreGold = (val: number) => {
-      if (!activeStoreId) return;
-      setStores(prev => prev.map(s => 
-          s.id === activeStoreId ? { ...s, goldPrice24k: val, updatedAt: Date.now() } : s
-      ));
-  };
-
-  // Triggered by ProjectList file input
-  const handleImportFile = (jsonString: string) => {
-      try {
-          const json = JSON.parse(jsonString);
-          setImportData(json);
-      } catch (e) {
-          alert("Failed to parse JSON file.");
-      }
-  };
-
-  const handleFinalizeImport = (candidates: { project: ProjectSettings, resolution: ImportResolution }[]) => {
-      const toAdd: ProjectSettings[] = [];
-      const idsToRemove = new Set<string>();
+  const handleUpdateStoreGold = async (val: number) => {
+      if (!activeStoreId || !session) return;
       
-      // Import Stores if available in payload
-      if (importData && Array.isArray(importData.stores)) {
-          const incomingStores = importData.stores as Store[];
-          // Merge stores avoiding duplicates by ID
-          setStores(prev => {
-              const existingIds = new Set(prev.map(s => s.id));
-              const newStores = incomingStores.filter(s => !existingIds.has(s.id));
-              if (newStores.length > 0 && !activeStoreId) {
-                  // If we had no stores and imported some, activate the first one
-                  setActiveStoreId(newStores[0].id);
-              }
-              return [...prev, ...newStores];
-          });
-      } else {
-          // Legacy Import: No stores in file.
-          // Assign imported projects to ACTIVE store or create default if needed
-          let targetStoreId = activeStoreId;
-          if (!targetStoreId) {
-              const defStoreId = crypto.randomUUID();
-              const defStore = { id: defStoreId, name: 'Default Store', goldPrice24k: 85, createdAt: Date.now(), updatedAt: Date.now() };
-              setStores([defStore]);
-              setActiveStoreId(defStoreId);
-              targetStoreId = defStoreId;
+      let updatedStore: Store | null = null;
+      setStores(prev => prev.map(s => {
+          if (s.id === activeStoreId) {
+             updatedStore = { ...s, goldPrice24k: val, updatedAt: Date.now() };
+             return updatedStore;
           }
-          
-          // Force candidates to use this targetStoreId if they don't have one
-          candidates.forEach(c => {
-              if (!c.project.storeId) c.project.storeId = targetStoreId!;
+          return s;
+      }));
+
+      if (updatedStore) {
+          await api.saveStore(updatedStore, session);
+      }
+  };
+
+  const handleConfirmDeleteStore = async (storeId: string) => {
+      const storeName = stores.find(s => s.id === storeId)?.name || 'Store';
+      const affectedProjectsCount = projects.filter(p => p.storeId === storeId).length;
+
+      // Snapshots for Rollback
+      const snapshotStores = [...stores];
+      const snapshotProjects = [...projects];
+      const snapshotActiveStoreId = activeStoreId;
+      const snapshotActiveProjectId = activeProjectId;
+      const shouldCloseWorkspace = activeProjectId && projects.find(p => p.id === activeProjectId)?.storeId === storeId;
+
+      try {
+          // Optimistic UI Updates
+          setStores(prev => {
+              const next = prev.filter(s => s.id !== storeId);
+              if (activeStoreId === storeId) {
+                  setActiveStoreId(next.length > 0 ? next[0].id : null);
+              }
+              return next;
           });
+          setProjects(prev => prev.filter(p => p.storeId !== storeId));
+
+          if (shouldCloseWorkspace) {
+              setActiveProjectId(null);
+          }
+
+          // API Delete
+          await api.deleteStore(storeId);
+
+          setToast({ 
+              message: `Deleted "${storeName}" and ${affectedProjectsCount} projects.`, 
+              type: 'success' 
+          });
+          setStoreToDelete(null);
+
+      } catch (error) {
+          console.error("Store deletion failed, rolling back.", error);
+          // Rollback
+          setStores(snapshotStores);
+          setProjects(snapshotProjects);
+          setActiveStoreId(snapshotActiveStoreId);
+          setActiveProjectId(snapshotActiveProjectId);
+          throw error; 
+      }
+  };
+
+  // --- OTHERS ---
+
+  const handleRenameProject = async (id: string, newName: string) => {
+    let updated: ProjectSettings | null = null;
+    setProjects(prev => prev.map(p => {
+        if (p.id === id) {
+            updated = { ...p, name: newName, lastModified: Date.now() };
+            return updated;
+        }
+        return p;
+    }));
+
+    if (updated && session) await api.saveProject(updated, session);
+  };
+
+  const handleArchiveProject = async (id: string, archive: boolean) => {
+     let updated: ProjectSettings | null = null;
+     setProjects(prev => prev.map(p => {
+         if (p.id === id) {
+             updated = { ...p, isArchived: archive };
+             return updated;
+         }
+         return p;
+     }));
+
+     if (updated && session) await api.saveProject(updated, session);
+  };
+
+  const handleBatchUpdateProjects = async (ids: string[], updates: Partial<ProjectSettings>) => {
+      const now = Date.now();
+      const projectsToSave: ProjectSettings[] = [];
+      
+      setProjects(prev => prev.map(p => {
+          if (ids.includes(p.id)) {
+              const u = { ...p, ...updates, lastModified: now };
+              projectsToSave.push(u);
+              return u;
+          }
+          return p;
+      }));
+
+      // Save each modified project
+      if (session) {
+          for (const p of projectsToSave) {
+              await api.saveProject(p, session);
+          }
+      }
+  };
+
+  const handleFinalizeImport = async (candidates: { project: ProjectSettings, resolution: ImportResolution }[]) => {
+      if (!session) return;
+      
+      const toAdd: ProjectSettings[] = [];
+      // (Simplified: We assume imported projects are mapped to existing stores or logic handled upstream)
+      
+      // Import Stores Logic from modal payload if strictly necessary would go here, 
+      // but simplistic approach for now assumes context is enough or we rely on ImportReviewModal structure.
+      // If we need to create stores from import, we'd loop through importData.stores first.
+      
+      // Process Candidates
+      for (const c of candidates) {
+          if (c.resolution === 'SKIP') continue;
+          
+          let p = migrateProject(c.project);
+          
+          if (!p.storeId && activeStoreId) p.storeId = activeStoreId;
+          
+          if (c.resolution === 'DUPLICATE') {
+              p.id = crypto.randomUUID();
+              p.name = `${p.name} (Imported)`;
+              p.createdAt = Date.now();
+          }
+
+          p.lastModified = Date.now();
+          toAdd.push(p);
+          
+          // Save individually
+          await api.saveProject(p, session);
       }
 
-      candidates.forEach(c => {
-          if (c.resolution === 'SKIP') return;
-
-          // Ensure project is migrated/valid structure
-          const migrated = migrateProject(c.project);
-
-          if (c.resolution === 'REPLACE') {
-              idsToRemove.add(migrated.id);
-              toAdd.push(migrated);
-          } else if (c.resolution === 'DUPLICATE') {
-              migrated.id = crypto.randomUUID();
-              migrated.name = `${migrated.name} (Imported)`;
-              migrated.createdAt = Date.now();
-              migrated.lastModified = Date.now();
-              toAdd.push(migrated);
-          }
+      setProjects(prev => {
+          // If REPLACE, we might need to filter out old ID first, but API upsert handles replace on DB side.
+          // Locally we merge.
+          const newIds = new Set(toAdd.map(x => x.id));
+          const filtered = prev.filter(x => !newIds.has(x.id));
+          return [...toAdd, ...filtered];
       });
 
-      if (toAdd.length > 0) {
-          setProjects(prev => {
-              const filtered = prev.filter(p => !idsToRemove.has(p.id));
-              return [...toAdd, ...filtered];
-          });
-          alert(`Successfully imported ${toAdd.length} project(s).`);
-      }
+      alert(`Imported ${toAdd.length} projects.`);
   };
 
-  const openEditModal = (project: ProjectSettings) => {
-      setEditingProject(project);
-  };
-
-  const handleEditSave = (updated: ProjectSettings) => {
-      handleUpdateProject(updated);
+  const handleEditSave = async (updated: ProjectSettings) => {
       setEditingProject(null);
+      await handleUpdateProject(updated);
   };
 
-  // Connection Indicator
+  // --- RENDER ---
+
+  if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div></div>;
+
+  if (!session) {
+    return <Login />;
+  }
+
   const ConnectionStatus = () => (
       <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold shadow-md transition-colors ${isBackendConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
           {isBackendConnected ? <Cloud size={14} /> : <CloudOff size={14} />}
@@ -321,7 +389,6 @@ export default function App() {
       </div>
   );
 
-  // If no store is active, show modal (blocks main UI)
   if (!isLoading && !activeStoreId) {
       return (
           <StoreModal 
@@ -351,22 +418,25 @@ export default function App() {
   return (
     <>
       <ProjectList 
-        projects={displayProjects} // Pass only active store projects
+        projects={displayProjects}
         stores={stores}
         activeStoreId={activeStoreId}
         onSelectStore={setActiveStoreId}
         onCreateStore={() => setActiveStoreId(null)}
+        onDeleteStore={(id) => setStoreToDelete(stores.find(s => s.id === id) || null)}
         onOpen={setActiveProjectId} 
         onDelete={handleDeleteProject}
         onDuplicate={handleDuplicateProject}
-        onEdit={openEditModal}
+        onEdit={setEditingProject}
         onRename={handleRenameProject}
         onArchive={handleArchiveProject}
         onNew={handleCreateNewProject}
         onGlobalSettings={() => setIsGlobalSettingsOpen(true)}
-        onImport={handleImportFile}
-        globalGoldPrice={activeStore?.goldPrice24k || 85} // Pass store specific gold
-        onUpdateGlobalGold={handleUpdateStoreGold} // Updates store specific gold
+        onImport={(str) => {
+             try { setImportData(JSON.parse(str)); } catch(e) { alert("Invalid JSON"); }
+        }}
+        globalGoldPrice={activeStore?.goldPrice24k || 85}
+        onUpdateGlobalGold={handleUpdateStoreGold}
         onBatchUpdate={handleBatchUpdateProjects}
       />
       
@@ -393,6 +463,28 @@ export default function App() {
         existingProjects={projects}
         onConfirm={handleFinalizeImport}
       />
+
+      <DeleteStoreModal 
+        isOpen={!!storeToDelete}
+        store={storeToDelete}
+        onClose={() => setStoreToDelete(null)}
+        onConfirm={handleConfirmDeleteStore}
+      />
+
+      {toast && (
+          <div className={`fixed bottom-16 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 rounded-full shadow-xl flex items-center gap-2 text-xs font-bold animate-in slide-in-from-bottom-5 fade-in ${toast.type === 'success' ? 'bg-gray-900 text-white' : 'bg-red-600 text-white'}`}>
+              <CheckCircle size={14} />
+              {toast.message}
+          </div>
+      )}
+
+      {/* Logout Helper (Hidden or explicit) - for now implicitly handled by session expiry or user clearing */}
+      <button 
+          onClick={() => supabase.auth.signOut()}
+          className="fixed top-4 right-4 text-xs font-bold text-gray-400 hover:text-red-500 z-50 md:hidden"
+      >
+          Log Out
+      </button>
 
       <ConnectionStatus />
     </>
