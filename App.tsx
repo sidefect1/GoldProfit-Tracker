@@ -13,12 +13,14 @@ import { DEFAULT_PURITIES, DEFAULT_MARKETPLACE_RATES, DEFAULT_PROJECT } from './
 import { migrateProject } from './utils/migrations';
 import { api } from './utils/api';
 import { supabase } from './utils/supabaseClient';
-import { Cloud, CloudOff, CheckCircle } from 'lucide-react';
+import { Cloud, CloudOff, CheckCircle, LogOut } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
 
 const GLOBAL_SETTINGS_KEY = 'gold-profit-global-settings';
 const GLOBAL_RATES_KEY = 'gold-profit-global-rates';
 const ACTIVE_STORE_ID_KEY = 'gold-profit-active-store-id';
+const STORES_KEY = 'gold-profit-stores';
+const PROJECTS_KEY = 'gold-profit-projects-v2';
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -331,11 +333,6 @@ export default function App() {
       if (!session) return;
       
       const toAdd: ProjectSettings[] = [];
-      // (Simplified: We assume imported projects are mapped to existing stores or logic handled upstream)
-      
-      // Import Stores Logic from modal payload if strictly necessary would go here, 
-      // but simplistic approach for now assumes context is enough or we rely on ImportReviewModal structure.
-      // If we need to create stores from import, we'd loop through importData.stores first.
       
       // Process Candidates
       for (const c of candidates) {
@@ -359,8 +356,6 @@ export default function App() {
       }
 
       setProjects(prev => {
-          // If REPLACE, we might need to filter out old ID first, but API upsert handles replace on DB side.
-          // Locally we merge.
           const newIds = new Set(toAdd.map(x => x.id));
           const filtered = prev.filter(x => !newIds.has(x.id));
           return [...toAdd, ...filtered];
@@ -372,6 +367,28 @@ export default function App() {
   const handleEditSave = async (updated: ProjectSettings) => {
       setEditingProject(null);
       await handleUpdateProject(updated);
+  };
+
+  // FULL LOGOUT & RESET
+  const handleLogout = async () => {
+      // 1. Sign out of Supabase
+      await supabase.auth.signOut();
+      
+      // 2. Clear Local Cache completely
+      localStorage.removeItem(GLOBAL_SETTINGS_KEY);
+      localStorage.removeItem(GLOBAL_RATES_KEY);
+      localStorage.removeItem(ACTIVE_STORE_ID_KEY);
+      localStorage.removeItem(STORES_KEY);
+      localStorage.removeItem(PROJECTS_KEY);
+      
+      // 3. Reset State
+      setSession(null);
+      setStores([]);
+      setProjects([]);
+      setActiveStoreId(null);
+      
+      // 4. Force Reload to ensure clean slate
+      window.location.reload();
   };
 
   // --- RENDER ---
@@ -478,12 +495,14 @@ export default function App() {
           </div>
       )}
 
-      {/* Logout Helper (Hidden or explicit) - for now implicitly handled by session expiry or user clearing */}
+      {/* Visible Logout & Reset Button */}
       <button 
-          onClick={() => supabase.auth.signOut()}
-          className="fixed top-4 right-4 text-xs font-bold text-gray-400 hover:text-red-500 z-50 md:hidden"
+          onClick={handleLogout}
+          className="fixed top-4 right-4 z-50 flex items-center gap-2 px-3 py-2 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg shadow-sm text-xs font-bold text-gray-500 hover:text-red-600 hover:bg-red-50 transition-all group"
+          title="Sign out and clear local data"
       >
-          Log Out
+          <LogOut size={14} className="group-hover:scale-110 transition-transform" />
+          <span>Log Out</span>
       </button>
 
       <ConnectionStatus />
