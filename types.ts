@@ -72,6 +72,12 @@ export interface Store {
   lastEditorName?: string;
   lastEditorId?: string;
   dbUpdatedAt?: number; // From DB updated_at column
+  
+  // Store-Scoped Global Standards
+  purities?: Record<KaratEnum, number>;
+  marketplaceRates?: MarketplaceRates;
+  defaultCouponPercent?: number;
+  defaultOffsiteAdsPercent?: number;
 }
 
 export interface ProjectSettings {
@@ -114,6 +120,10 @@ export interface ProjectSettings {
   couponDiscountPercent?: number; // Simulation: Coupon Code %
   offsiteAdsPercent?: number; // Simulation: Offsite Ads Fee %
   
+  // Monitor Mode Simulation State (Optional Persistence)
+  monitorSimulationMode?: 'PERCENT' | 'USD';
+  monitorSimulationValue?: number;
+
   // Data Model Config
   widths: number[]; // e.g. [2,3,4,5,6,7,8]
   sizes: number[];  // Active rows (Ring sizes or Lengths)

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ProjectSettings, ProductType, MarketplaceType, KaratEnum } from '../types';
-import { ChevronRight, ChevronLeft, Check, Package, Layers, DollarSign, Ruler, X, Coins } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, Package, Layers, DollarSign, Ruler, X, Coins, Gem, Link2, Link, Sparkles } from 'lucide-react';
 import { PRODUCT_CONFIGS, AVAILABLE_NECKLACE_LENGTHS, AVAILABLE_BRACELET_LENGTHS, getSizesForProduct, generateDefaultAnchors, KARATS } from '../constants';
 
 interface SetupWizardProps {
@@ -62,23 +62,23 @@ const WizardNumberInput = ({
     };
 
     return (
-        <div className="relative">
+        <div className="relative group">
             {prefix && (
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold pointer-events-none">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-400 font-bold pointer-events-none transition-colors">
                     {prefix}
                 </div>
             )}
             <input 
                 type="text"
                 inputMode="decimal"
-                className={`w-full border border-gray-200 rounded-xl py-3 text-sm font-bold text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${prefix ? 'pl-8' : 'px-3'} ${suffix ? 'pr-8' : 'px-3'} ${className}`}
+                className={`w-full border border-gray-200 dark:border-white/20 rounded-xl py-3 text-sm font-bold text-gray-900 dark:text-white bg-white dark:bg-navy-950 focus:ring-2 focus:ring-gold-500 dark:focus:ring-gold-500 focus:border-gold-500 dark:focus:border-gold-500 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-400 ${prefix ? 'pl-8' : 'px-3'} ${suffix ? 'pr-8' : 'px-3'} ${className}`}
                 value={localStr}
                 onChange={handleChange}
                 onFocus={() => setIsFocused(true)}
                 onBlur={handleBlur}
             />
             {suffix && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 pointer-events-none">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 dark:text-slate-400 pointer-events-none transition-colors">
                     {suffix}
                 </div>
             )}
@@ -92,6 +92,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
   
   // Local state for validations & inputs
   const [customWidthInput, setCustomWidthInput] = useState('');
+  const [nameTouched, setNameTouched] = useState(false);
 
   // Auto-init variations if empty based on type (only once on load)
   useEffect(() => {
@@ -119,10 +120,14 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
   };
 
   const nextStep = () => {
-      // Step 1 Validation: Must have at least 1 karat
-      if (step === 1 && localProject.activeKarats.length === 0) {
-          return; // Block next
+      // Step 1 Validation
+      if (step === 1) {
+          setNameTouched(true);
+          const hasName = localProject.name.trim().length > 0;
+          const hasKarats = localProject.activeKarats.length > 0;
+          if (!hasName || !hasKarats) return; // Block
       }
+      
       // Step 2 Validation: Must have at least 1 size for Necklace/Bracelet
       if (step === 2 && (localProject.productType === 'NECKLACE' || localProject.productType === 'BRACELET')) {
           if (localProject.sizes.length === 0) {
@@ -194,23 +199,52 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
       });
   };
 
-  const renderStep1Basics = () => (
+  const canContinue = () => {
+      if (step === 1) return localProject.name.trim().length > 0 && localProject.activeKarats.length > 0;
+      if (step === 2 && (localProject.productType === 'NECKLACE' || localProject.productType === 'BRACELET')) {
+          return localProject.sizes.length > 0;
+      }
+      return true;
+  };
+
+  const getProductTypeIcon = (type: ProductType) => {
+      switch(type) {
+          case 'RING': return <Gem size={18} />;
+          case 'NECKLACE': return <Link2 size={18} />;
+          case 'BRACELET': return <Link size={18} />;
+          case 'EARRING': return <Sparkles size={18} />;
+          default: return <Package size={18} />;
+      }
+  };
+
+  const renderStep1Basics = () => {
+      const isNameInvalid = nameTouched && localProject.name.trim().length === 0;
+
+      return (
       <div className="space-y-6">
           {/* Project Name */}
           <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Project Name</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-slate-300 uppercase tracking-wider mb-2">Project Name</label>
               <input 
-                  className="w-full text-lg font-bold border-b-2 border-gray-200 py-2 focus:border-blue-500 outline-none bg-transparent"
+                  className={`w-full text-lg font-bold border-b-2 py-2 outline-none bg-transparent transition-colors ${
+                      isNameInvalid 
+                      ? 'border-red-500 text-red-600 dark:text-red-400 placeholder:text-red-300' 
+                      : 'border-gray-200 dark:border-white/10 focus:border-gold-500 dark:focus:border-gold-500 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500'
+                  }`}
                   value={localProject.name}
                   onChange={(e) => handleUpdate({ name: e.target.value })}
+                  onBlur={() => setNameTouched(true)}
                   placeholder="Project Name"
                   autoFocus
               />
+              {isNameInvalid && (
+                  <p className="text-xs font-bold text-red-500 mt-1 animate-in slide-in-from-top-1 fade-in">Project name is required.</p>
+              )}
           </div>
 
           {/* Gold Price (Full Width) */}
           <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Gold Price (24K)</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-slate-300 uppercase tracking-wider mb-2">Gold Price (24K)</label>
               <WizardNumberInput 
                   prefix="$"
                   suffix="/g"
@@ -222,7 +256,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
 
           {/* Marketplace (Side by Side) */}
           <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Marketplace</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-slate-300 uppercase tracking-wider mb-2">Marketplace</label>
               <div className="grid grid-cols-2 gap-4">
                   {(['etsy', 'shopify'] as const).map(m => (
                       <button
@@ -230,11 +264,11 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
                           onClick={() => handleUpdate({ marketplace: m })}
                           className={`flex items-center gap-3 px-4 py-3 border rounded-xl font-bold text-sm transition-all text-left justify-center ${
                               localProject.marketplace === m 
-                              ? (m === 'etsy' ? 'bg-orange-50 border-orange-500 text-orange-700' : 'bg-emerald-50 border-emerald-500 text-emerald-700')
-                              : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                              ? (m === 'etsy' ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-500 text-orange-700 dark:text-orange-400' : 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500 text-emerald-700 dark:text-emerald-400')
+                              : 'bg-white dark:bg-navy-950 border-gray-200 dark:border-white/10 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-white/30'
                           }`}
                       >
-                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${localProject.marketplace === m ? 'border-current bg-current' : 'border-gray-300'}`}>
+                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${localProject.marketplace === m ? 'border-current bg-current' : 'border-gray-300 dark:border-slate-500'}`}>
                               {localProject.marketplace === m && <Check size={10} className="text-white" strokeWidth={4} />}
                           </div>
                           {m === 'etsy' ? 'Etsy' : 'Shopify'}
@@ -245,33 +279,32 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
 
           {/* Product Type */}
           <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Product Type</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-slate-300 uppercase tracking-wider mb-2">Product Type</label>
               <div className="grid grid-cols-2 gap-2">
-                  {(['RING', 'NECKLACE', 'BRACELET', 'EARRING'] as const).map(type => (
+                  {(['RING', 'NECKLACE', 'BRACELET', 'EARRING'] as const).map(type => {
+                      const isSelected = localProject.productType === type;
+                      return (
                       <button
                           key={type}
                           onClick={() => changeProductType(type)}
-                          className={`py-3 px-3 rounded-xl border text-xs font-bold transition-all flex items-center gap-2 ${
-                              localProject.productType === type 
-                              ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-sm'
-                              : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                          className={`py-3 px-3 rounded-xl border text-xs font-bold transition-all flex items-center gap-3 ${
+                              isSelected
+                              ? 'bg-gold-50 dark:bg-gold-900/20 border-gold-500 text-gold-700 dark:text-gold-400 shadow-sm'
+                              : 'bg-white dark:bg-navy-950 border-gray-200 dark:border-white/10 text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-white/30 hover:text-gray-700 dark:hover:text-slate-200'
                           }`}
                       >
-                          <span className="text-base">
-                            {type === 'RING' && '💍'}
-                            {type === 'NECKLACE' && '📿'}
-                            {type === 'BRACELET' && '💫'}
-                            {type === 'EARRING' && '👂'}
-                          </span>
-                          {PRODUCT_CONFIGS[type].label}
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-200 ${isSelected ? 'bg-white dark:bg-navy-900 text-gold-500' : 'bg-gray-100 dark:bg-navy-800 text-gray-400 dark:text-slate-500'}`}>
+                              {getProductTypeIcon(type)}
+                          </div>
+                          <span className="uppercase tracking-wide">{PRODUCT_CONFIGS[type].label}</span>
                       </button>
-                  ))}
+                  )})}
               </div>
           </div>
 
           {/* Active Karats (Expanded Grid) */}
           <div>
-             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Active Karats</label>
+             <label className="block text-xs font-bold text-gray-500 dark:text-slate-300 uppercase tracking-wider mb-2">Active Karats</label>
              <div className="grid grid-cols-4 gap-2">
                {KARATS.map(k => (
                  <button
@@ -279,8 +312,8 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
                     onClick={() => toggleKarat(k)}
                     className={`w-full py-2.5 rounded-lg border transition-all text-sm font-bold flex justify-center items-center ${
                       localProject.activeKarats.includes(k) 
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm' 
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                      ? 'bg-gold-500 text-white border-gold-500 shadow-md shadow-gold-500/20' 
+                      : 'bg-white dark:bg-navy-950 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/30'
                     }`}
                  >
                     {k}
@@ -288,11 +321,12 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
                ))}
              </div>
              {localProject.activeKarats.length === 0 && (
-                 <p className="text-[10px] text-red-500 font-bold mt-1">Select at least one karat.</p>
+                 <p className="text-[10px] text-red-500 font-bold mt-1 animate-pulse">Select at least one karat.</p>
              )}
           </div>
       </div>
-  );
+      );
+  };
 
   const renderStep2Variations = () => {
       const type = localProject.productType;
@@ -303,7 +337,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
           <div className="space-y-6">
               {/* Widths/Styles */}
               <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                  <label className="block text-xs font-bold text-gray-500 dark:text-slate-300 uppercase tracking-wider mb-3">
                       {config.widthLabel}s
                   </label>
                   
@@ -315,8 +349,8 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
                                   onClick={() => toggleWidth(w)}
                                   className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
                                       localProject.widths.includes(w) 
-                                      ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
-                                      : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                                      ? 'bg-gold-500 text-white border-gold-500 shadow-md' 
+                                      : 'bg-white dark:bg-navy-950 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/30'
                                   }`}
                               >
                                   {w}mm
@@ -328,24 +362,24 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
                           <div className="flex gap-2">
                               <input 
                                   type="number"
-                                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1 bg-white"
+                                  className="border border-gray-300 dark:border-white/20 rounded-lg px-3 py-2 text-sm flex-1 bg-white dark:bg-navy-950 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none"
                                   placeholder="Add value (e.g. 1.5)"
                                   value={customWidthInput}
                                   onChange={e => setCustomWidthInput(e.target.value)}
                                   onKeyDown={e => e.key === 'Enter' && addCustomWidth()}
                               />
-                              <button onClick={addCustomWidth} className="bg-gray-100 px-4 py-2 rounded-lg text-sm font-bold">Add</button>
+                              <button onClick={addCustomWidth} className="bg-gray-100 dark:bg-navy-800 px-4 py-2 rounded-lg text-sm font-bold text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-navy-700">Add</button>
                           </div>
                           {localProject.widths.length > 0 ? (
                               <div className="flex flex-wrap gap-2">
                                   {localProject.widths.map(w => (
-                                      <span key={w} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs font-bold border border-blue-100">
+                                      <span key={w} className="inline-flex items-center gap-1 bg-gold-50 dark:bg-gold-900/20 text-gold-700 dark:text-gold-400 px-2 py-1 rounded-full text-xs font-bold border border-gold-200 dark:border-gold-800/50">
                                           {w}mm <button onClick={() => toggleWidth(w)}><X size={12} /></button>
                                       </span>
                                   ))}
                               </div>
                           ) : (
-                              <div className="text-xs text-gray-400 italic">No {config.widthLabel.toLowerCase()}s added yet.</div>
+                              <div className="text-xs text-gray-400 dark:text-slate-500 italic">No {config.widthLabel.toLowerCase()}s added yet.</div>
                           )}
                       </div>
                   )}
@@ -355,11 +389,11 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
               {isNecklaceOrBracelet && (
                   <div>
                       <div className="flex justify-between items-center mb-3">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        <label className="block text-xs font-bold text-gray-500 dark:text-slate-300 uppercase tracking-wider">
                             {config.sizeLabel}s (Select to Enable)
                         </label>
                         {localProject.sizes.length === 0 && (
-                            <span className="text-[10px] text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded">Selection Required</span>
+                            <span className="text-[10px] text-red-500 font-bold bg-red-50 dark:bg-red-900/30 px-2 py-0.5 rounded border border-red-100 dark:border-red-900">Selection Required</span>
                         )}
                       </div>
                       
@@ -374,7 +408,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
                                       className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
                                           isSel 
                                           ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' 
-                                          : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                                          : 'bg-white dark:bg-navy-950 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/30'
                                       }`}
                                   >
                                       {s}"
@@ -391,9 +425,9 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
   const renderStep3Costs = () => (
       <div className="space-y-6">
           <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Labor Model (Milyem)</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-slate-300 uppercase tracking-wider mb-2">Labor Model (Milyem)</label>
               <select 
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full border border-gray-200 dark:border-white/20 rounded-lg px-3 py-2 text-sm bg-white dark:bg-navy-950 text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-gold-500 dark:focus:ring-gold-500 focus:border-gold-500 dark:focus:border-gold-500 outline-none"
                   value={localProject.laborModel}
                   onChange={(e) => handleUpdate({ laborModel: e.target.value as any })}
               >
@@ -404,8 +438,8 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
 
           <div>
               <div className="flex justify-between">
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Labor (Milyem)</label>
-                  <span className="text-[10px] text-gray-400 font-medium">100 milyem = %10 of 24K Price</span>
+                  <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase mb-1">Labor (Milyem)</label>
+                  <span className="text-[10px] text-gray-400 dark:text-slate-500 font-medium">100 milyem = %10 of 24K Price</span>
               </div>
               <WizardNumberInput 
                   value={localProject.laborMilyem}
@@ -415,21 +449,21 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
 
           <div className="grid grid-cols-3 gap-3">
               <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Shipping</label>
+                  <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase mb-1">Shipping</label>
                   <WizardNumberInput 
                       value={localProject.shippingCost}
                       onChange={(val) => handleUpdate({ shippingCost: val })}
                   />
               </div>
               <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Packaging</label>
+                  <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase mb-1">Packaging</label>
                   <WizardNumberInput 
                       value={localProject.packagingCost}
                       onChange={(val) => handleUpdate({ packagingCost: val })}
                   />
               </div>
               <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Overhead</label>
+                  <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase mb-1">Overhead</label>
                   <WizardNumberInput 
                       value={localProject.overheadCost}
                       onChange={(val) => handleUpdate({ overheadCost: val })}
@@ -439,28 +473,20 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
       </div>
   );
 
-  const canContinue = () => {
-      if (step === 1) return localProject.activeKarats.length > 0;
-      if (step === 2 && (localProject.productType === 'NECKLACE' || localProject.productType === 'BRACELET')) {
-          return localProject.sizes.length > 0;
-      }
-      return true;
-  };
-
   return (
-    <div className="fixed inset-0 z-[100] bg-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-[100] bg-black/20 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 transition-colors duration-200">
+        <div className="bg-white dark:bg-navy-900 border border-gray-100 dark:border-white/5 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden transition-colors duration-200">
             
             {/* Header */}
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <div className="p-6 border-b border-gray-100 dark:border-white/10 flex justify-between items-center bg-gray-50/50 dark:bg-navy-800/50">
                 <div>
-                    <h2 className="text-xl font-black text-gray-900">Project Setup</h2>
-                    <p className="text-sm text-gray-500">Configure your project base settings.</p>
+                    <h2 className="text-xl font-black text-gray-900 dark:text-slate-100">Project Setup</h2>
+                    <p className="text-sm text-gray-500 dark:text-slate-300">Configure your project base settings.</p>
                 </div>
                 {/* Stepper Dots */}
                 <div className="flex gap-2">
                     {STEPS.map(s => (
-                        <div key={s.id} className={`w-2.5 h-2.5 rounded-full transition-all ${step >= s.id ? 'bg-blue-600' : 'bg-gray-200'}`} />
+                        <div key={s.id} className={`w-2.5 h-2.5 rounded-full transition-all ${step >= s.id ? 'bg-gold-500' : 'bg-gray-200 dark:bg-white/10'}`} />
                     ))}
                 </div>
             </div>
@@ -468,10 +494,10 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-8">
                 <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
+                    <div className="w-10 h-10 rounded-full bg-gold-50 dark:bg-gold-900/20 text-gold-600 dark:text-gold-400 flex items-center justify-center font-bold text-lg">
                         {step}
                     </div>
-                    <h3 className="text-lg font-bold text-gray-800">{STEPS[step - 1].label}</h3>
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-slate-200">{STEPS[step - 1].label}</h3>
                 </div>
                 
                 <div className="pl-2">
@@ -482,13 +508,13 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
+            <div className="p-6 border-t border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-navy-900 flex justify-between items-center">
                 {step > 1 ? (
-                    <button onClick={prevStep} className="flex items-center gap-2 px-4 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-lg transition-colors">
+                    <button onClick={prevStep} className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-slate-300 font-bold hover:bg-gray-200 dark:hover:bg-navy-800 rounded-lg transition-colors">
                         <ChevronLeft size={18} /> Back
                     </button>
                 ) : (
-                    <button onClick={onClose} className="px-4 py-2 text-gray-400 font-bold hover:text-gray-600">Close</button>
+                    <button onClick={onClose} className="px-4 py-2 text-gray-400 dark:text-slate-500 font-bold hover:text-gray-600 dark:hover:text-slate-300">Close</button>
                 )}
 
                 <button 
@@ -496,8 +522,8 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ project, onUpdate, onC
                     disabled={!canContinue()}
                     className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95 ${
                         canContinue() 
-                        ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
+                        ? 'bg-gold-500 text-white hover:bg-gold-600' 
+                        : 'bg-gray-300 dark:bg-navy-800 text-gray-500 dark:text-slate-500 cursor-not-allowed shadow-none'
                     }`}
                 >
                     {step === 3 ? 'Finish Setup' : 'Next'} 

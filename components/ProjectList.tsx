@@ -84,22 +84,22 @@ const ActionMenu = ({
 
   if (!isOpen) return null;
 
-  const itemClass = "w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2.5 transition-colors";
+  const itemClass = "w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-navy-800 flex items-center gap-2.5 transition-colors";
   const positionClass = direction === 'up' 
     ? "bottom-full mb-2 origin-bottom-right" 
     : "top-full mt-1 origin-top-right";
 
   return (
-    <div ref={ref} className={`absolute right-0 w-48 bg-white rounded-xl shadow-xl py-1.5 z-50 border border-gray-100 ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-100 ${positionClass}`}>
-      <button onClick={() => onAction('open')} className={itemClass}><Eye size={16} className="text-gray-400" /> Open</button>
-      <button onClick={() => onAction('duplicate')} className={itemClass}><Copy size={16} className="text-gray-400" /> Duplicate</button>
-      <button onClick={() => onAction('edit')} className={itemClass}><Edit2 size={16} className="text-gray-400" /> Edit Variations</button>
+    <div ref={ref} className={`absolute right-0 w-48 bg-white dark:bg-navy-900 rounded-xl shadow-xl py-1.5 z-50 border border-gray-100 dark:border-white/10 ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-100 ${positionClass}`}>
+      <button onClick={() => onAction('open')} className={itemClass}><Eye size={16} className="text-gray-400 dark:text-slate-500" /> Open</button>
+      <button onClick={() => onAction('duplicate')} className={itemClass}><Copy size={16} className="text-gray-400 dark:text-slate-500" /> Duplicate</button>
+      <button onClick={() => onAction('edit')} className={itemClass}><Edit2 size={16} className="text-gray-400 dark:text-slate-500" /> Edit Variations</button>
       <button onClick={() => onAction('archive')} className={itemClass}>
-        {isArchived ? <RefreshCw size={16} className="text-green-500" /> : <Archive size={16} className="text-gray-400" />}
+        {isArchived ? <RefreshCw size={16} className="text-green-500" /> : <Archive size={16} className="text-gray-400 dark:text-slate-500" />}
         {isArchived ? 'Set Active' : 'Archive'}
       </button>
-      <div className="border-t border-gray-100 my-1"></div>
-      <button onClick={() => onAction('delete')} className={`${itemClass} text-red-600 hover:bg-red-50 hover:text-red-700`}><Trash2 size={16} /> Delete</button>
+      <div className="border-t border-gray-100 dark:border-white/10 my-1"></div>
+      <button onClick={() => onAction('delete')} className={`${itemClass} text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700`}><Trash2 size={16} /> Delete</button>
     </div>
   );
 };
@@ -108,7 +108,7 @@ const ToggleSwitch = ({ checked, onChange }: { checked: boolean; onChange: (v: b
     <button
         onClick={() => onChange(!checked)}
         className={`w-9 h-5 rounded-full relative transition-colors duration-200 ease-in-out focus:outline-none shrink-0 ${
-            checked ? 'bg-red-500' : 'bg-gray-200'
+            checked ? 'bg-red-500' : 'bg-gray-200 dark:bg-white/20'
         }`}
     >
         <span
@@ -124,8 +124,8 @@ const FilterChip = ({ label, value, current, onClick }: { label: string, value: 
       onClick={() => onClick(value)}
       className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap border ${
           current === value 
-          ? 'bg-gray-900 text-white shadow-md border-gray-900' 
-          : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+          ? 'bg-gray-900 dark:bg-gold-500 text-white shadow-md border-gray-900 dark:border-gold-500' 
+          : 'bg-white dark:bg-navy-900 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-navy-800 hover:border-gray-300 dark:hover:border-white/20'
       }`}
     >
         {label}
@@ -133,9 +133,9 @@ const FilterChip = ({ label, value, current, onClick }: { label: string, value: 
 );
 
 const ActiveFilterTag = ({ label, onClear }: { label: string, onClear: () => void }) => (
-    <div className="flex items-center gap-1 bg-white text-blue-900 px-2.5 py-1 rounded-full text-[10px] font-bold border border-blue-100 shadow-sm animate-in fade-in zoom-in-95">
+    <div className="flex items-center gap-1 bg-white dark:bg-navy-800 text-blue-900 dark:text-blue-100 px-2.5 py-1 rounded-full text-[10px] font-bold border border-blue-100 dark:border-blue-800 shadow-sm animate-in fade-in zoom-in-95">
         <span>{label}</span>
-        <button onClick={onClear} className="hover:text-red-500 transition-colors p-0.5 rounded-full hover:bg-blue-50">
+        <button onClick={onClear} className="hover:text-red-500 transition-colors p-0.5 rounded-full hover:bg-blue-50 dark:hover:bg-navy-700">
             <X size={10} />
         </button>
     </div>
@@ -390,7 +390,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8 font-sans">
+    <div className="min-h-screen bg-gray-50 dark:bg-navy-950 p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleFileChange} />
 
@@ -400,18 +400,18 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                 {/* Mobile Top Row */}
                 <div className="flex md:hidden justify-between items-center col-span-1 order-1">
-                    <div className="flex items-center bg-white border border-gray-200 rounded-xl shadow-sm p-1">
-                        <button onClick={() => setIsStorePopoverOpen(true)} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-                            <Building2 size={16} className="text-gray-400" />
-                            <span className="text-xs font-bold text-gray-800 max-w-[80px] truncate">{activeStore?.name || 'Store'}</span>
+                    <div className="flex items-center bg-white dark:bg-navy-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm p-1">
+                        <button onClick={() => setIsStorePopoverOpen(true)} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-navy-800 transition-colors">
+                            <Building2 size={16} className="text-gray-400 dark:text-slate-500" />
+                            <span className="text-xs font-bold text-gray-800 dark:text-slate-200 max-w-[80px] truncate">{activeStore?.name || 'Store'}</span>
                         </button>
-                        <div className="w-px h-5 bg-gray-200 mx-1"></div>
-                        <button onClick={() => setIsGoldModalOpen(true)} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-                            <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center text-amber-600"><Coins size={12} /></div>
-                            <span className="text-xs font-black text-gray-800">${formatNumber(globalGoldPrice, 0)}</span>
+                        <div className="w-px h-5 bg-gray-200 dark:bg-white/10 mx-1"></div>
+                        <button onClick={() => setIsGoldModalOpen(true)} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-navy-800 transition-colors">
+                            <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-amber-600 dark:text-amber-400"><Coins size={12} /></div>
+                            <span className="text-xs font-black text-gray-800 dark:text-slate-200">${formatNumber(globalGoldPrice, 0)}</span>
                         </button>
                     </div>
-                    <button onClick={onNew} className="bg-blue-600 text-white p-2.5 rounded-xl shadow-lg hover:bg-blue-700 transition-colors">
+                    <button onClick={onNew} className="bg-blue-600 dark:bg-gold-500 text-white p-2.5 rounded-xl shadow-lg hover:bg-blue-700 dark:hover:bg-gold-600 transition-colors">
                         <Plus size={20} />
                     </button>
                 </div>
@@ -419,9 +419,9 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                 {/* Search */}
                 <div className="col-span-1 md:col-span-7 xl:col-span-6 order-2 md:order-1 flex gap-2 w-full">
                     <div className="relative flex-1">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
                         <input 
-                            className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white border border-gray-200 focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none text-sm font-medium text-gray-700 placeholder:text-gray-400 shadow-sm"
+                            className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white dark:bg-navy-950 border border-gray-200 dark:border-white/20 focus:ring-2 focus:ring-blue-100 dark:focus:ring-gold-500/20 focus:border-blue-400 dark:focus:border-gold-500 outline-none text-sm font-medium text-gray-700 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 shadow-sm transition-colors"
                             placeholder="Search projects..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -432,8 +432,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                             onClick={() => setIsMarketplacePopoverOpen(!isMarketplacePopoverOpen)}
                             className={`h-full px-3 md:px-4 rounded-xl text-xs font-bold transition-all border flex items-center gap-2 ${
                                 marketplaceFilter.etsy || marketplaceFilter.shopify
-                                ? 'bg-white border-blue-300 text-blue-800 shadow-sm ring-1 ring-blue-100'
-                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                                ? 'bg-white dark:bg-navy-900 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-300 shadow-sm ring-1 ring-blue-100 dark:ring-blue-900'
+                                : 'bg-white dark:bg-navy-900 border-gray-200 dark:border-white/10 text-gray-600 dark:text-slate-300 hover:border-gray-300 dark:hover:border-white/20'
                             }`}
                         >
                             <span className="hidden md:inline">
@@ -443,18 +443,18 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                             <ChevronDown size={14} className="opacity-50" />
                         </button>
                         {isMarketplacePopoverOpen && (
-                            <div className="absolute top-full mt-2 left-0 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-3 z-50 animate-in fade-in zoom-in-95 duration-100">
-                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Filter by Marketplace</h4>
+                            <div className="absolute top-full mt-2 left-0 w-48 bg-white dark:bg-navy-900 rounded-xl shadow-xl border border-gray-100 dark:border-white/10 p-3 z-50 animate-in fade-in zoom-in-95 duration-100">
+                                <h4 className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">Filter by Marketplace</h4>
                                 <div className="space-y-1">
-                                    <button onClick={() => setMarketplaceFilter(p => ({...p, etsy: !p.etsy}))} className="flex items-center w-full gap-3 p-2 hover:bg-gray-50 rounded-lg text-sm text-gray-700"><div className={`w-4 h-4 rounded border flex items-center justify-center ${marketplaceFilter.etsy ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-300 bg-white'}`}>{marketplaceFilter.etsy && <Check size={10} strokeWidth={4} />}</div> Etsy</button>
-                                    <button onClick={() => setMarketplaceFilter(p => ({...p, shopify: !p.shopify}))} className="flex items-center w-full gap-3 p-2 hover:bg-gray-50 rounded-lg text-sm text-gray-700"><div className={`w-4 h-4 rounded border flex items-center justify-center ${marketplaceFilter.shopify ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 bg-white'}`}>{marketplaceFilter.shopify && <Check size={10} strokeWidth={4} />}</div> Shopify</button>
+                                    <button onClick={() => setMarketplaceFilter(p => ({...p, etsy: !p.etsy}))} className="flex items-center w-full gap-3 p-2 hover:bg-gray-50 dark:hover:bg-navy-800 rounded-lg text-sm text-gray-700 dark:text-slate-200"><div className={`w-4 h-4 rounded border flex items-center justify-center ${marketplaceFilter.etsy ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-300 dark:border-white/20 bg-white dark:bg-navy-950'}`}>{marketplaceFilter.etsy && <Check size={10} strokeWidth={4} />}</div> Etsy</button>
+                                    <button onClick={() => setMarketplaceFilter(p => ({...p, shopify: !p.shopify}))} className="flex items-center w-full gap-3 p-2 hover:bg-gray-50 dark:hover:bg-navy-800 rounded-lg text-sm text-gray-700 dark:text-slate-200"><div className={`w-4 h-4 rounded border flex items-center justify-center ${marketplaceFilter.shopify ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 dark:border-white/20 bg-white dark:bg-navy-950'}`}>{marketplaceFilter.shopify && <Check size={10} strokeWidth={4} />}</div> Shopify</button>
                                 </div>
                             </div>
                         )}
                     </div>
                     <button 
                         onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
-                        className={`h-full min-h-[42px] aspect-square md:aspect-auto md:px-6 rounded-full border flex items-center justify-center gap-2 transition-all duration-200 ${isFilterPanelOpen || activeTechFilterCount > 0 ? 'bg-gray-900 text-white border-gray-900 shadow-md' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'}`}
+                        className={`h-full min-h-[42px] aspect-square md:aspect-auto md:px-6 rounded-full border flex items-center justify-center gap-2 transition-all duration-200 ${isFilterPanelOpen || activeTechFilterCount > 0 ? 'bg-gray-900 dark:bg-gold-500 text-white border-gray-900 dark:border-gold-500 shadow-md' : 'bg-white dark:bg-navy-900 border-gray-200 dark:border-white/10 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-navy-800 hover:border-gray-300 dark:hover:border-white/20'}`}
                     >
                         <ListFilter size={18} strokeWidth={2.5} />
                         <span className="hidden md:inline text-sm font-semibold">Filters</span>
@@ -468,42 +468,50 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
 
                 {/* Context Zone (Desktop) - SAME AS BEFORE */}
                 <div className="hidden md:flex col-span-5 xl:col-span-6 order-3 justify-end items-center gap-3">
-                    <div className="flex items-center bg-white border border-gray-200 rounded-xl shadow-sm p-1 h-11">
+                    <button 
+                        onClick={onGlobalSettings}
+                        className="rounded-xl px-3 py-2 text-sm font-semibold transition-colors duration-200 border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-navy-700 text-gray-700 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-navy-600 flex items-center gap-2"
+                    >
+                        <Settings size={16} />
+                        <span>Global Settings</span>
+                    </button>
+
+                    <div className="flex items-center bg-white dark:bg-navy-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm p-1 h-11">
                         <div className="relative" ref={storeTriggerRef}>
                             <button
                                 onClick={() => setIsStorePopoverOpen(!isStorePopoverOpen)}
-                                className="group hover:bg-gray-50 rounded-lg px-2 py-1.5 flex items-center transition-colors h-full"
+                                className="group hover:bg-gray-50 dark:hover:bg-navy-800 rounded-lg px-2 py-1.5 flex items-center transition-colors h-full"
                                 title={activeStore ? `Active Store: ${activeStore.name}` : 'Select Store'}
                             >
                                 <div className="flex items-center gap-2 max-w-[140px]">
-                                    <div className="p-1 rounded-md text-gray-400 group-hover:text-blue-500 transition-colors">
+                                    <div className="p-1 rounded-md text-gray-400 group-hover:text-blue-500 dark:group-hover:text-gold-400 transition-colors">
                                         <Building2 size={18} />
                                     </div>
-                                    <span className="truncate text-sm font-bold text-gray-700 leading-tight">
+                                    <span className="truncate text-sm font-bold text-gray-700 dark:text-slate-200 leading-tight">
                                         {activeStore?.name || 'Select Store'}
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-2 pl-3 ml-2 border-l border-gray-200 h-6">
-                                    <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                <div className="flex items-center gap-2 pl-3 ml-2 border-l border-gray-200 dark:border-white/10 h-6">
+                                    <span className="bg-gray-100 dark:bg-navy-700 text-gray-500 dark:text-slate-300 text-[10px] font-bold px-1.5 py-0.5 rounded">
                                         {storeProjectCounts[activeStoreId || ''] || 0}
                                     </span>
-                                    <ChevronDown size={14} className="text-gray-400" />
+                                    <ChevronDown size={14} className="text-gray-400 dark:text-slate-500" />
                                 </div>
                             </button>
                             {/* Store Popover Logic (Same as existing) */}
                             {isStorePopoverOpen && (
                                 <div 
                                     ref={storePopoverRef} 
-                                    className="fixed inset-x-0 bottom-0 z-[100] md:absolute md:inset-auto md:top-full md:right-0 md:mt-2 w-full md:w-96 bg-white md:rounded-2xl rounded-t-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col max-h-[80vh] md:max-h-[500px] animate-in slide-in-from-bottom-10 md:slide-in-from-top-2 md:fade-in origin-top-right"
+                                    className="fixed inset-x-0 bottom-0 z-[100] md:absolute md:inset-auto md:top-full md:right-0 md:mt-2 w-full md:w-96 bg-white dark:bg-navy-900 md:rounded-2xl rounded-t-2xl shadow-2xl border border-gray-200 dark:border-white/10 overflow-hidden flex flex-col max-h-[80vh] md:max-h-[500px] animate-in slide-in-from-bottom-10 md:slide-in-from-top-2 md:fade-in origin-top-right"
                                 >
                                      {/* ... Store Popover Content ... */}
                                      {/* (Abbreviated for brevity, logic identical to previous implementation) */}
-                                     <div className="px-4 py-3 border-b border-gray-100 shrink-0">
+                                     <div className="px-4 py-3 border-b border-gray-100 dark:border-white/10 shrink-0">
                                          <div className="relative">
-                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
                                             <input 
                                                 ref={searchInputRef}
-                                                className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-transparent rounded-xl text-sm font-medium text-gray-900 focus:bg-white focus:border-blue-300 focus:ring-4 focus:ring-blue-50 outline-none transition-all placeholder:text-gray-400"
+                                                className="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-navy-950 border border-transparent dark:border-white/10 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:bg-white dark:focus:bg-navy-900 focus:border-blue-300 dark:focus:border-gold-500 focus:ring-4 focus:ring-blue-50 dark:focus:ring-gold-500/10 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
                                                 placeholder="Search store..."
                                                 value={storeSearch}
                                                 onChange={(e) => setStoreSearch(e.target.value)}
@@ -516,38 +524,38 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                                             <button
                                                 key={store.id}
                                                 onClick={() => { onSelectStore(store.id); setIsStorePopoverOpen(false); }}
-                                                className={`w-full flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all text-left group border ${store.id === activeStoreId ? 'bg-blue-50 border-blue-200 shadow-sm' : (idx === storeFocusIdx ? 'bg-gray-50 border-gray-200' : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-100')}`}
+                                                className={`w-full flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all text-left group border ${store.id === activeStoreId ? 'bg-blue-50 dark:bg-navy-800 border-blue-200 dark:border-blue-900 shadow-sm' : (idx === storeFocusIdx ? 'bg-gray-50 dark:bg-navy-800 border-gray-200 dark:border-white/10' : 'bg-white dark:bg-navy-900 border-transparent hover:bg-gray-50 dark:hover:bg-navy-800 hover:border-gray-100 dark:hover:border-white/10')}`}
                                             >
                                                 <div className="flex items-center gap-3 min-w-0">
                                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm shrink-0 ${getAvatarColor(store.name)}`}>
                                                         {store.name.substring(0,2).toUpperCase()}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <div className={`text-sm font-bold truncate ${store.id === activeStoreId ? 'text-blue-900' : 'text-gray-800'}`}>{store.name}</div>
+                                                        <div className={`text-sm font-bold truncate ${store.id === activeStoreId ? 'text-blue-900 dark:text-blue-200' : 'text-gray-800 dark:text-slate-200'}`}>{store.name}</div>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    {store.id === activeStoreId && <Check size={14} className="text-blue-600" />}
-                                                    {onDeleteStore && <div role="button" onClick={(e) => { e.stopPropagation(); onDeleteStore(store.id); }} className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-md"><Trash2 size={14} /></div>}
+                                                    {store.id === activeStoreId && <Check size={14} className="text-blue-600 dark:text-blue-400" />}
+                                                    {onDeleteStore && <div role="button" onClick={(e) => { e.stopPropagation(); onDeleteStore(store.id); }} className="p-1.5 text-gray-300 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"><Trash2 size={14} /></div>}
                                                 </div>
                                             </button>
                                         ))}
                                      </div>
-                                     <div className="p-3 border-t border-gray-100 bg-gray-50 shrink-0 sticky bottom-0">
-                                        <button onClick={() => { onCreateStore(); setIsStorePopoverOpen(false); }} className="w-full py-3 rounded-xl bg-gray-900 text-white font-bold text-xs hover:bg-black shadow-lg shadow-gray-200 transition-all flex items-center justify-center gap-2">
+                                     <div className="p-3 border-t border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-navy-800/50 shrink-0 sticky bottom-0">
+                                        <button onClick={() => { onCreateStore(); setIsStorePopoverOpen(false); }} className="w-full py-3 rounded-xl bg-gray-900 dark:bg-gold-500 text-white font-bold text-xs hover:bg-black dark:hover:bg-gold-600 shadow-lg shadow-gray-200 dark:shadow-none transition-all flex items-center justify-center gap-2">
                                             <Plus size={16} /> Create New Store
                                         </button>
                                      </div>
                                 </div>
                             )}
                         </div>
-                        <div className="w-px h-6 bg-gray-200 mx-1"></div>
-                        <button onClick={() => setIsGoldModalOpen(true)} className="hover:bg-gray-50 rounded-lg px-3 py-2 flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors group h-full">
-                            <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 group-hover:bg-amber-200 group-hover:text-amber-700 transition-colors"><Coins size={14} /></div>
-                            <div className="flex flex-col items-start leading-none"><span className="text-[9px] font-bold text-gray-400 uppercase">Gold</span><span className="font-black">${formatNumber(globalGoldPrice, 0)}</span></div>
+                        <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-1"></div>
+                        <button onClick={() => setIsGoldModalOpen(true)} className="hover:bg-gray-50 dark:hover:bg-navy-800 rounded-lg px-3 py-2 flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-slate-200 transition-colors group h-full">
+                            <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-amber-600 dark:text-amber-400 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/80 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors"><Coins size={14} /></div>
+                            <div className="flex flex-col items-start leading-none"><span className="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase">Gold</span><span className="font-black">${formatNumber(globalGoldPrice, 0)}</span></div>
                         </button>
                     </div>
-                    <button onClick={onNew} className="h-11 px-5 bg-blue-600 text-white rounded-xl shadow-lg hover:bg-blue-700 transition-all font-bold text-sm flex items-center gap-2 whitespace-nowrap">
+                    <button onClick={onNew} className="h-11 px-5 bg-blue-600 dark:bg-gold-500 text-white rounded-xl shadow-lg hover:bg-blue-700 dark:hover:bg-gold-600 transition-all font-bold text-sm flex items-center gap-2 whitespace-nowrap">
                         <Plus size={18} /> <span className="hidden xl:inline">New Project</span> <span className="xl:hidden">New</span>
                     </button>
                 </div>
@@ -555,26 +563,26 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
 
             {/* Filters Row */}
             {isFilterPanelOpen && (
-                 <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm flex flex-col md:flex-row gap-4 items-center animate-in slide-in-from-top-2 fade-in">
+                 <div className="bg-white dark:bg-navy-900 border border-gray-200 dark:border-white/10 rounded-xl p-3 shadow-sm flex flex-col md:flex-row gap-4 items-center animate-in slide-in-from-top-2 fade-in">
                     {/* ... (Existing Filter Controls) ... */}
                     <div className="flex items-center gap-2 w-full md:w-auto">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase w-16 md:w-auto">Status:</span>
-                        <select className="bg-gray-50 text-xs font-bold text-gray-700 border border-gray-200 rounded-lg py-1.5 px-2 cursor-pointer hover:border-gray-300 focus:outline-none flex-1 md:flex-none" value={healthFilter} onChange={(e) => setHealthFilter(e.target.value as any)} disabled={showLossesOnly}>
+                        <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase w-16 md:w-auto">Status:</span>
+                        <select className="bg-gray-50 dark:bg-navy-950 text-xs font-bold text-gray-700 dark:text-white border border-gray-200 dark:border-white/10 rounded-lg py-1.5 px-2 cursor-pointer hover:border-gray-300 dark:hover:border-white/20 focus:outline-none flex-1 md:flex-none" value={healthFilter} onChange={(e) => setHealthFilter(e.target.value as any)} disabled={showLossesOnly}>
                             <option value="ALL">Show All</option>
                             <option value="LOSS">Loss Risks</option>
                             <option value="OK">Healthy</option>
                             <option value="SETUP">Needs Setup</option>
                         </select>
                     </div>
-                    <div className="hidden md:block w-px h-6 bg-gray-100"></div>
+                    <div className="hidden md:block w-px h-6 bg-gray-100 dark:bg-white/10"></div>
                     <div className="flex items-center gap-3 w-full md:w-auto">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase w-16 md:w-auto">Only Risks:</span>
-                        <div className="flex items-center gap-2"><ToggleSwitch checked={showLossesOnly} onChange={setShowLossesOnly} /><span className={`text-xs font-bold ${showLossesOnly ? 'text-red-600' : 'text-gray-400'}`}>{showLossesOnly ? 'ON' : 'OFF'}</span></div>
+                        <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase w-16 md:w-auto">Only Risks:</span>
+                        <div className="flex items-center gap-2"><ToggleSwitch checked={showLossesOnly} onChange={setShowLossesOnly} /><span className={`text-xs font-bold ${showLossesOnly ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-slate-500'}`}>{showLossesOnly ? 'ON' : 'OFF'}</span></div>
                     </div>
-                    <div className="hidden md:block w-px h-6 bg-gray-100"></div>
+                    <div className="hidden md:block w-px h-6 bg-gray-100 dark:bg-white/10"></div>
                     <div className="flex items-center gap-2 w-full md:w-auto">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase w-16 md:w-auto">Min Loss:</span>
-                        <div className="relative flex items-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 flex-1 md:flex-none"><span className="text-xs font-bold text-gray-400 mr-1">$</span><input type="number" className="w-16 text-xs font-bold text-gray-900 bg-transparent outline-none placeholder:text-gray-300" placeholder="Any" value={profitThreshold === 0 ? '' : profitThreshold} onChange={(e) => setProfitThreshold(parseFloat(e.target.value) || 0)} /></div>
+                        <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase w-16 md:w-auto">Min Loss:</span>
+                        <div className="relative flex items-center bg-gray-50 dark:bg-navy-950 border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1.5 flex-1 md:flex-none"><span className="text-xs font-bold text-gray-400 mr-1">$</span><input type="number" className="w-16 text-xs font-bold text-gray-900 dark:text-white bg-transparent outline-none placeholder:text-gray-300 dark:placeholder:text-slate-600" placeholder="Any" value={profitThreshold === 0 ? '' : profitThreshold} onChange={(e) => setProfitThreshold(parseFloat(e.target.value) || 0)} /></div>
                     </div>
                 </div>
             )}
@@ -582,17 +590,17 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
             {/* Active Filters & Category Chips ... (Same as before) */}
             {hasActiveFilters && (
                 <div className="flex flex-wrap items-center gap-2 px-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-1">Active:</span>
+                    <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mr-1">Active:</span>
                     {healthFilter !== 'ALL' && <ActiveFilterTag label={`Status: ${healthFilter}`} onClear={() => setHealthFilter('ALL')} />}
                     {showLossesOnly && <ActiveFilterTag label="Losses Only" onClear={() => setShowLossesOnly(false)} />}
                     {profitThreshold > 0 && <ActiveFilterTag label={`Min Loss: $${profitThreshold}`} onClear={() => setProfitThreshold(0)} />}
                     {filterType !== 'ALL' && <ActiveFilterTag label={`Type: ${PRODUCT_CONFIGS[filterType].label}`} onClear={() => setFilterType('ALL')} />}
                     {searchQuery && <ActiveFilterTag label={`Search: "${searchQuery}"`} onClear={() => setSearchQuery('')} />}
-                    <button onClick={clearAllFilters} className="text-[10px] font-bold text-blue-600 hover:text-blue-800 underline ml-2">Clear All</button>
+                    <button onClick={clearAllFilters} className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline ml-2">Clear All</button>
                 </div>
             )}
 
-            <div className="flex items-center gap-4 border-t border-gray-100 pt-4 overflow-x-auto no-scrollbar md:overflow-visible">
+            <div className="flex items-center gap-4 border-t border-gray-100 dark:border-white/10 pt-4 overflow-x-auto no-scrollbar md:overflow-visible">
                 <div className="flex gap-2 min-w-max px-1">
                     <FilterChip label="All Types" value="ALL" current={filterType} onClick={(v) => setFilterType(v as any)} />
                     <FilterChip label="Rings" value="RING" current={filterType} onClick={(v) => setFilterType(v as any)} />
@@ -602,14 +610,14 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                 </div>
                 <div className="flex-1"></div>
                 <div className="hidden md:flex items-center gap-2">
-                    <div className="flex items-center bg-white rounded-lg p-0.5 border border-gray-200 shadow-sm">
-                        <button onClick={handleImportClick} className="p-1.5 hover:bg-gray-50 rounded-md text-gray-500 hover:text-gray-800 transition-all" title="Import"><Upload size={14}/></button>
-                        <div className="w-px h-3 bg-gray-200 mx-0.5"></div>
-                        <button onClick={handleExport} disabled={selectedIds.size === 0} className={`p-1.5 rounded-md transition-all ${selectedIds.size > 0 ? 'hover:bg-gray-50 text-blue-600' : 'text-gray-300 cursor-not-allowed'}`} title="Export"><Download size={14}/></button>
+                    <div className="flex items-center bg-white dark:bg-navy-900 rounded-lg p-0.5 border border-gray-200 dark:border-white/10 shadow-sm">
+                        <button onClick={handleImportClick} className="p-1.5 hover:bg-gray-50 dark:hover:bg-navy-800 rounded-md text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-all" title="Import"><Upload size={14}/></button>
+                        <div className="w-px h-3 bg-gray-200 dark:bg-white/10 mx-0.5"></div>
+                        <button onClick={handleExport} disabled={selectedIds.size === 0} className={`p-1.5 rounded-md transition-all ${selectedIds.size > 0 ? 'hover:bg-gray-50 dark:hover:bg-navy-800 text-blue-600 dark:text-blue-400' : 'text-gray-300 dark:text-slate-600 cursor-not-allowed'}`} title="Export"><Download size={14}/></button>
                     </div>
-                    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm">
-                        <ArrowUpDown size={14} className="text-gray-400" />
-                        <select className="text-xs font-bold bg-transparent border-none p-0 focus:ring-0 text-gray-600 cursor-pointer w-28 outline-none" value={sortType} onChange={(e) => setSortType(e.target.value as any)}>
+                    <div className="flex items-center gap-2 bg-white dark:bg-navy-900 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 shadow-sm">
+                        <ArrowUpDown size={14} className="text-gray-400 dark:text-slate-500" />
+                        <select className="text-xs font-bold bg-transparent border-none p-0 focus:ring-0 text-gray-600 dark:text-slate-300 cursor-pointer w-28 outline-none dark:bg-navy-900" value={sortType} onChange={(e) => setSortType(e.target.value as any)}>
                             <option value="DATE_DESC">Newest</option>
                             <option value="DATE_ASC">Oldest</option>
                             <option value="NAME_ASC">Name A-Z</option>
@@ -623,22 +631,22 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
         {/* Gold Modal (Same as before) */}
         {isGoldModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                    <div className="bg-gradient-to-b from-orange-400 to-orange-500 p-8 text-white text-center">
+                <div className="bg-white dark:bg-navy-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-gray-100 dark:border-white/10">
+                    <div className="bg-gradient-to-b from-orange-400 to-orange-500 dark:from-gold-600 dark:to-gold-700 p-8 text-white text-center">
                         <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
                             <Coins size={24} className="text-white" />
                         </div>
                         <h3 className="text-xl font-bold">Store Gold Rate</h3>
-                        <p className="text-orange-100 text-sm mt-1">Updates calculations for this store.</p>
+                        <p className="text-orange-100 dark:text-gold-100 text-sm mt-1">Updates calculations for this store.</p>
                     </div>
                     <div className="p-8">
                         <div className="mb-6">
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Price per Gram (24K)</label>
+                            <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">Price per Gram (24K)</label>
                             <div className="relative">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">$</span>
                                 <input 
                                     type="number" 
-                                    className="w-full pl-9 pr-4 py-4 text-2xl font-bold text-gray-900 bg-white border border-gray-200 rounded-xl focus:ring-4 focus:ring-orange-100 focus:border-orange-500 outline-none transition-all shadow-sm"
+                                    className="w-full pl-9 pr-4 py-4 text-2xl font-bold text-gray-900 dark:text-white bg-white dark:bg-navy-950 border border-gray-200 dark:border-white/20 rounded-xl focus:ring-4 focus:ring-orange-100 dark:focus:ring-gold-500/20 focus:border-orange-500 dark:focus:border-gold-500 outline-none transition-all shadow-sm"
                                     value={modalGoldPrice}
                                     onChange={(e) => setModalGoldPrice(e.target.value)}
                                     autoFocus
@@ -647,8 +655,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                             </div>
                         </div>
                         <div className="flex items-center justify-between gap-4">
-                            <button onClick={() => setIsGoldModalOpen(false)} className="text-gray-500 font-bold hover:text-gray-800 px-4 transition-colors">Cancel</button>
-                            <button onClick={handleSaveGold} className="flex-1 bg-gradient-to-b from-orange-400 to-orange-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-orange-200 hover:scale-105 transition-transform">Update Rate</button>
+                            <button onClick={() => setIsGoldModalOpen(false)} className="text-gray-500 dark:text-slate-400 font-bold hover:text-gray-800 dark:hover:text-slate-200 px-4 transition-colors">Cancel</button>
+                            <button onClick={handleSaveGold} className="flex-1 bg-gradient-to-b from-orange-400 to-orange-500 dark:from-gold-500 dark:to-gold-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-orange-200 dark:shadow-none hover:scale-105 transition-transform">Update Rate</button>
                         </div>
                     </div>
                 </div>
@@ -657,15 +665,15 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
 
         {/* Project Grid */}
         {filteredAndSortedProjects.length === 0 ? (
-           <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-8 md:p-16 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-50 text-gray-400 rounded-full mb-4">
+           <div className="bg-white dark:bg-navy-900 rounded-2xl border border-dashed border-gray-300 dark:border-white/10 p-8 md:p-16 text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-50 dark:bg-navy-800 text-gray-400 dark:text-slate-500 rounded-full mb-4">
                  <FolderOpen size={32} />
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">No projects found</h3>
-              <p className="text-gray-500 mb-6">
+              <h3 className="text-xl font-bold text-gray-800 dark:text-slate-200 mb-2">No projects found</h3>
+              <p className="text-gray-500 dark:text-slate-400 mb-6">
                   {searchQuery ? 'Try adjusting your search.' : (showLossesOnly ? 'No projects with loss found.' : 'Create a new project to get started.')}
               </p>
-              <button onClick={onNew} className="text-blue-600 font-bold hover:underline">Create New Project</button>
+              <button onClick={onNew} className="text-blue-600 dark:text-gold-400 font-bold hover:underline">Create New Project</button>
            </div>
         ) : (
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -673,25 +681,25 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                  const style = PRODUCT_STYLES[p.productType];
                  const isSelected = selectedIds.has(p.id);
                  const mType = p.marketplace || 'etsy';
-                 let cardBorder = 'border-gray-200 hover:border-blue-200';
-                 let cardBg = 'bg-white';
+                 let cardBorder = 'border-gray-200 dark:border-white/10 hover:border-blue-200 dark:hover:border-gold-500/30';
+                 let cardBg = 'bg-white dark:bg-navy-900';
                  let healthBadge = null;
 
                  if (p._health.status === 'LOSS') {
-                     cardBg = 'bg-gradient-to-br from-white via-white to-red-50';
-                     cardBorder = 'border-red-200 ring-1 ring-red-50';
-                     healthBadge = (<div className="flex items-center gap-1 bg-red-100 text-red-700 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border border-red-200"><TrendingDown size={12} /> Loss Risk</div>);
+                     cardBg = 'bg-gradient-to-br from-white via-white to-red-50 dark:from-navy-900 dark:to-red-900/20';
+                     cardBorder = 'border-red-200 dark:border-red-900/50 ring-1 ring-red-50 dark:ring-red-900/20';
+                     healthBadge = (<div className="flex items-center gap-1 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border border-red-200 dark:border-red-800/50"><TrendingDown size={12} /> Loss Risk</div>);
                  } else if (p._health.status === 'OK') {
-                     cardBg = 'bg-gradient-to-br from-white via-white to-emerald-50';
-                     cardBorder = 'border-green-200 ring-1 ring-green-50';
-                     healthBadge = (<div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border border-green-200"><Activity size={12} /> Healthy</div>);
+                     cardBg = 'bg-gradient-to-br from-white via-white to-emerald-50 dark:from-navy-900 dark:to-green-900/20';
+                     cardBorder = 'border-green-200 dark:border-green-900/50 ring-1 ring-green-50 dark:ring-green-900/20';
+                     healthBadge = (<div className="flex items-center gap-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border border-green-200 dark:border-green-800/50"><Activity size={12} /> Healthy</div>);
                  } else {
-                     cardBg = 'bg-gray-50';
-                     cardBorder = 'border-gray-200';
-                     healthBadge = (<div className="flex items-center gap-1 bg-gray-200 text-gray-600 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase"><AlertCircle size={12} /> Needs Setup</div>);
+                     cardBg = 'bg-gray-50 dark:bg-navy-800';
+                     cardBorder = 'border-gray-200 dark:border-white/5';
+                     healthBadge = (<div className="flex items-center gap-1 bg-gray-200 dark:bg-navy-700 text-gray-600 dark:text-slate-400 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase"><AlertCircle size={12} /> Needs Setup</div>);
                  }
 
-                 if (isSelected) { cardBorder = 'ring-2 ring-blue-500 border-blue-500'; cardBg = 'bg-white'; }
+                 if (isSelected) { cardBorder = 'ring-2 ring-blue-500 border-blue-500 dark:ring-gold-500 dark:border-gold-500'; cardBg = 'bg-white dark:bg-navy-800'; }
 
                  return (
                     <div key={p.id} onClick={() => onOpen(p.id)} className={`${cardBg} rounded-2xl border shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col group relative overflow-hidden ${cardBorder}`}>
@@ -699,52 +707,52 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                             <div className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-black text-white shadow-sm ring-1 ring-white/20 ${mType === 'shopify' ? 'bg-emerald-700' : 'bg-orange-700'}`}>{mType === 'shopify' ? 'S' : 'E'}</div>
                         </div>
                         <div className="absolute top-4 right-4 z-20">
-                            <button onClick={(e) => toggleSelect(e, p.id)} className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-600 text-white shadow-sm' : 'bg-white border-2 border-gray-200 text-transparent hover:border-blue-400'}`}><Check size={14} strokeWidth={4} /></button>
+                            <button onClick={(e) => toggleSelect(e, p.id)} className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-600 dark:bg-gold-500 text-white shadow-sm' : 'bg-white dark:bg-navy-700 border-2 border-gray-200 dark:border-white/10 text-transparent hover:border-blue-400 dark:hover:border-gold-400'}`}><Check size={14} strokeWidth={4} /></button>
                         </div>
                         <div className="p-5 pl-14 flex flex-col h-full">
                             <div className="flex items-start gap-4">
-                                <div className={`w-14 h-14 ${style.colorBg} rounded-2xl flex items-center justify-center ${style.colorText} shadow-sm shrink-0 group-hover:scale-105 transition-transform duration-200`}>{getProductIcon(p.productType, "w-8 h-8")}</div>
+                                <div className={`w-14 h-14 ${style.colorBg} dark:bg-opacity-20 rounded-2xl flex items-center justify-center ${style.colorText} dark:text-current shadow-sm shrink-0 group-hover:scale-105 transition-transform duration-200`}>{getProductIcon(p.productType, "w-8 h-8")}</div>
                                 <div className="flex-1 min-w-0 pt-1">
                                     <div className="flex justify-between items-start">
                                         <div className="flex-1 min-w-0 mr-8" onClick={e => e.stopPropagation()}>
                                             {editingNameId === p.id ? (
-                                                <div className="flex items-center gap-1 w-full relative z-20"><input className="w-full border border-blue-400 rounded-lg px-2 py-1 text-base font-bold text-gray-900 focus:ring-4 focus:ring-blue-100 outline-none bg-white shadow-sm" value={tempName} onChange={e => setTempName(e.target.value)} autoFocus onClick={e => e.stopPropagation()} onKeyDown={e => e.key === 'Enter' && saveRenaming(e, p.id)}/><button onClick={e => saveRenaming(e, p.id)} className="bg-green-100 text-green-700 p-1.5 rounded-md hover:bg-green-200 transition-colors"><Check size={14}/></button><button onClick={(e) => { e.stopPropagation(); setEditingNameId(null); }} className="bg-red-100 text-red-700 p-1.5 rounded-md hover:bg-red-200 transition-colors"><X size={14}/></button></div>
+                                                <div className="flex items-center gap-1 w-full relative z-20"><input className="w-full border border-blue-400 rounded-lg px-2 py-1 text-base font-bold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900 outline-none bg-white dark:bg-navy-950 shadow-sm" value={tempName} onChange={e => setTempName(e.target.value)} autoFocus onClick={e => e.stopPropagation()} onKeyDown={e => e.key === 'Enter' && saveRenaming(e, p.id)}/><button onClick={e => saveRenaming(e, p.id)} className="bg-green-100 text-green-700 p-1.5 rounded-md hover:bg-green-200 transition-colors"><Check size={14}/></button><button onClick={(e) => { e.stopPropagation(); setEditingNameId(null); }} className="bg-red-100 text-red-700 p-1.5 rounded-md hover:bg-red-200 transition-colors"><X size={14}/></button></div>
                                             ) : (
-                                                <div className="group/name flex items-center gap-2"><h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">{p.name}</h3><button onClick={(e) => startRenaming(e, p)} className="text-gray-300 hover:text-blue-500 opacity-0 group-hover/name:opacity-100 transition-opacity p-1 hidden md:block"><Edit2 size={14} /></button></div>
+                                                <div className="group/name flex items-center gap-2"><h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-gold-400 transition-colors truncate">{p.name}</h3><button onClick={(e) => startRenaming(e, p)} className="text-gray-300 dark:text-slate-600 hover:text-blue-500 dark:hover:text-gold-400 opacity-0 group-hover/name:opacity-100 transition-opacity p-1 hidden md:block"><Edit2 size={14} /></button></div>
                                             )}
                                         </div>
                                     </div>
                                     <div className="flex flex-wrap items-center gap-y-2 gap-x-2 mt-1.5 text-xs">
-                                        <div className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md ${style.colorBg} ${style.colorText} bg-opacity-50`}><span className="uppercase tracking-wider text-[10px]">{PRODUCT_CONFIGS[p.productType].label}</span></div>
-                                        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-tight ${mType === 'shopify' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-orange-50 text-orange-700 border-orange-100'}`}><span className="text-[9px]">{mType === 'shopify' ? 'Shopify' : 'Etsy'}</span></div>
-                                        <span className="text-gray-400 text-[10px] flex items-center gap-1 ml-auto sm:ml-0"><Calendar size={10} /> {formatDate(p.lastModified)}</span>
+                                        <div className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md ${style.colorBg} dark:bg-opacity-20 ${style.colorText} dark:text-gray-300 bg-opacity-50`}><span className="uppercase tracking-wider text-[10px]">{PRODUCT_CONFIGS[p.productType].label}</span></div>
+                                        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-tight ${mType === 'shopify' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800' : 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-100 dark:border-orange-800'}`}><span className="text-[9px]">{mType === 'shopify' ? 'Shopify' : 'Etsy'}</span></div>
+                                        <span className="text-gray-400 dark:text-slate-500 text-[10px] flex items-center gap-1 ml-auto sm:ml-0"><Calendar size={10} /> {formatDate(p.lastModified)}</span>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex-1 min-h-[1rem]"></div>
                             {p._health.status !== 'SETUP' && (
                                 <div className="mb-2">
-                                    <div className="flex items-center justify-between text-xs mb-1"><span className="text-gray-500 font-medium">Est. Min Profit</span><span className={`font-mono font-bold ${p._health.status === 'LOSS' ? 'text-red-600' : 'text-green-600'}`}>{formatCurrency(p._health.minProfit)}</span></div>
-                                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden"><div className={`h-full rounded-full ${p._health.status === 'LOSS' ? 'bg-red-500 w-full' : 'bg-green-500 w-3/4'}`}></div></div>
+                                    <div className="flex items-center justify-between text-xs mb-1"><span className="text-gray-500 dark:text-slate-400 font-medium">Est. Min Profit</span><span className={`font-mono font-bold ${p._health.status === 'LOSS' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>{formatCurrency(p._health.minProfit)}</span></div>
+                                    <div className="h-1.5 w-full bg-gray-100 dark:bg-navy-700 rounded-full overflow-hidden"><div className={`h-full rounded-full ${p._health.status === 'LOSS' ? 'bg-red-500' : 'bg-green-500'}`}></div></div>
                                 </div>
                             )}
 
                             {/* AUDIT INFO */}
-                            <div className="mt-2 pt-2 border-t border-gray-100/50 text-[10px] text-gray-400 flex items-center justify-between">
+                            <div className="mt-2 pt-2 border-t border-gray-100/50 dark:border-white/5 text-[10px] text-gray-400 dark:text-slate-500 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5" title="Last Editor">
-                                    <UserCircle2 size={12} className="text-gray-300" />
+                                    <UserCircle2 size={12} className="text-gray-300 dark:text-slate-600" />
                                     <span className="truncate max-w-[80px]">{p.lastEditorName || '—'}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5" title={`Synced: ${p.dbUpdatedAt ? new Date(p.dbUpdatedAt).toLocaleTimeString() : 'N/A'}`}>
-                                    <Clock size={12} className="text-gray-300" />
+                                    <Clock size={12} className="text-gray-300 dark:text-slate-600" />
                                     <span>{p.dbUpdatedAt ? new Date(p.dbUpdatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '—'}</span>
                                 </div>
                             </div>
 
-                            <div className="mt-2 pt-2 border-t border-gray-100/50 flex items-center justify-between text-xs text-gray-500 relative">
-                                <div className="flex items-center gap-2">{healthBadge}{p.activePriceBookId && (<span className="inline-block text-[10px] bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded truncate max-w-[80px]">{p.priceBooks.find(b => b.id === p.activePriceBookId)?.name || 'Book'}</span>)}</div>
+                            <div className="mt-2 pt-2 border-t border-gray-100/50 dark:border-white/5 flex items-center justify-between text-xs text-gray-500 dark:text-slate-400 relative">
+                                <div className="flex items-center gap-2">{healthBadge}{p.activePriceBookId && (<span className="inline-block text-[10px] bg-gray-50 dark:bg-navy-800 border border-gray-100 dark:border-white/10 px-1.5 py-0.5 rounded truncate max-w-[80px]">{p.priceBooks.find(b => b.id === p.activePriceBookId)?.name || 'Book'}</span>)}</div>
                                 <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                                     <div className="relative"><button onClick={() => setOpenMenuId(openMenuId === p.id ? null : p.id)} className={`p-1.5 rounded-md transition-colors ${openMenuId === p.id ? 'bg-gray-100 text-gray-900' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50'}`}><MoreVertical size={16} /></button><ActionMenu isOpen={openMenuId === p.id} onClose={() => setOpenMenuId(null)} onAction={(action) => handleMenuAction(action, p)} isArchived={!!p.isArchived} direction="up" /></div>
+                                     <div className="relative"><button onClick={() => setOpenMenuId(openMenuId === p.id ? null : p.id)} className={`p-1.5 rounded-md transition-colors ${openMenuId === p.id ? 'bg-gray-100 dark:bg-navy-700 text-gray-900 dark:text-white' : 'text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 hover:bg-gray-50 dark:hover:bg-navy-800'}`}><MoreVertical size={16} /></button><ActionMenu isOpen={openMenuId === p.id} onClose={() => setOpenMenuId(null)} onAction={(action) => handleMenuAction(action, p)} isArchived={!!p.isArchived} direction="up" /></div>
                                 </div>
                             </div>
                         </div>

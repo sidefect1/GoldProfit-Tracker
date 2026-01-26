@@ -57,10 +57,10 @@ export const GridCell: React.FC<GridCellProps> = ({
   // Heatmap Logic
   const getBackgroundColor = (profit: number) => {
     if (profit <= thresholds.darkRed) return 'bg-red-800 text-white border-red-900';
-    if (profit < thresholds.lightRed) return 'bg-red-200 text-red-900 border-red-300';
-    if (profit < thresholds.lightGreen) return 'bg-green-100 text-green-800 border-green-200';
-    if (profit < thresholds.darkGreen) return 'bg-green-300 text-green-900 border-green-400';
-    return 'bg-green-600 text-white border-green-700'; // Super profit
+    if (profit < thresholds.lightRed) return 'bg-red-200 dark:bg-red-900 text-red-900 dark:text-red-100 border-red-300 dark:border-red-800';
+    if (profit < thresholds.lightGreen) return 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 border-green-200 dark:border-green-800';
+    if (profit < thresholds.darkGreen) return 'bg-green-300 dark:bg-green-800 text-green-900 dark:text-green-50 border-green-400 dark:border-green-700';
+    return 'bg-green-600 dark:bg-green-700 text-white border-green-700 dark:border-green-600'; // Super profit
   };
 
   const colorClass = getBackgroundColor(data.profitUSD);
@@ -129,7 +129,7 @@ export const GridCell: React.FC<GridCellProps> = ({
             <input 
                 ref={inputRef}
                 autoFocus
-                className={`w-full h-full text-center bg-white text-gray-900 font-bold outline-none ${zoomStyles.text}`}
+                className={`w-full h-full text-center bg-white dark:bg-navy-950 text-gray-900 dark:text-white font-bold outline-none ${zoomStyles.text}`}
                 value={editValue}
                 onChange={e => setEditValue(e.target.value)}
                 onBlur={handleSaveEdit}
@@ -175,7 +175,7 @@ export const GridCell: React.FC<GridCellProps> = ({
 
   // Custom styling
   const cellClass = activeMode === 'marketplace' 
-      ? `bg-indigo-50 text-indigo-900 border-indigo-100` 
+      ? `bg-indigo-50 dark:bg-indigo-900 text-indigo-900 dark:text-indigo-100 border-indigo-100 dark:border-indigo-800` 
       : colorClass; 
   
   const cursorClass = (activeMode === 'builder' && interactionState !== 'editing') ? 'cursor-pointer' : 'cursor-default';
@@ -185,13 +185,13 @@ export const GridCell: React.FC<GridCellProps> = ({
 
   // Highlight Overlay (Row/Col hover)
   const highlightOverlay = isHighlighted && !isSelected ? (
-      <div className="absolute inset-0 bg-white/20 pointer-events-none z-20 mix-blend-overlay"></div>
+      <div className="absolute inset-0 bg-white/20 dark:bg-white/5 pointer-events-none z-20 mix-blend-overlay"></div>
   ) : null;
 
   return (
     <div 
       ref={containerRef}
-      className={`relative ${zoomStyles.height} ${zoomStyles.padding} ${zoomStyles.text} flex items-center justify-center font-medium border border-white/10 transition-all ${cellClass} ${cursorClass} ${isSelected ? 'ring-2 ring-inset ring-blue-400 z-30' : ''}`}
+      className={`relative ${zoomStyles.height} ${zoomStyles.padding} ${zoomStyles.text} flex items-center justify-center font-medium border border-white/10 transition-all ${cellClass} ${cursorClass} ${isSelected ? 'ring-2 ring-inset ring-blue-400 dark:ring-gold-400 z-30' : ''}`}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -204,7 +204,7 @@ export const GridCell: React.FC<GridCellProps> = ({
       
       {/* Edit Overlay (Pencil) */}
       {isSelected && (
-          <div className="absolute inset-0 bg-blue-600/90 flex items-center justify-center text-white backdrop-blur-[1px] animate-in fade-in duration-100 cursor-pointer z-40">
+          <div className="absolute inset-0 bg-blue-600/90 dark:bg-gold-600/90 flex items-center justify-center text-white backdrop-blur-[1px] animate-in fade-in duration-100 cursor-pointer z-40">
               <Edit2 size={16} />
           </div>
       )}

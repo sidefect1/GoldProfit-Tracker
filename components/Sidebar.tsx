@@ -11,7 +11,7 @@ interface SidebarProps {
   onExport: () => void;
   activeTab: 'builder' | 'monitor' | 'marketplace'; // controlled by Workspace
   onSaveBook: (name: string) => void;
-  onOverwriteBook: () => void; // New Prop
+  onOverwriteBook: (options?: { marketplaceDiscount?: number }) => void; // Updated signature
   globalGoldPrice: number;
   marketplaceRates: MarketplaceRates;
   selectedKarat?: KaratEnum; // New Prop to determine scope
@@ -61,17 +61,17 @@ const SmartNumberInput = ({
   };
 
   return (
-    <div className={`relative rounded-md shadow-sm group ${disabled ? 'opacity-60 cursor-not-allowed bg-gray-50' : ''} ${className}`}>
+    <div className={`relative rounded-md shadow-sm group ${disabled ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-navy-800' : ''} ${className}`}>
       {prefix && (
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-          <span className="text-gray-400 sm:text-xs group-focus-within:text-blue-500 transition-colors font-medium">{prefix}</span>
+          <span className="text-gray-400 dark:text-slate-500 sm:text-xs group-focus-within:text-blue-500 dark:group-focus-within:text-gold-500 transition-colors font-medium">{prefix}</span>
         </div>
       )}
       <input
         type="text"
         inputMode="decimal"
         disabled={disabled}
-        className={`block w-full rounded-md border-gray-300 bg-white py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 text-sm sm:leading-6 transition-all ${prefix ? 'pl-6' : 'pl-3'} ${suffix ? 'pr-7' : 'pr-3'} ${disabled ? 'bg-gray-100 text-gray-500 select-none' : ''}`}
+        className={`block w-full rounded-md border-gray-300 dark:border-white/20 bg-white dark:bg-navy-950 py-2 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-200 dark:ring-white/10 placeholder:text-gray-300 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-inset focus:ring-blue-600 dark:focus:ring-gold-500 text-sm sm:leading-6 transition-all ${prefix ? 'pl-6' : 'pl-3'} ${suffix ? 'pr-7' : 'pr-3'} ${disabled ? 'bg-gray-100 dark:bg-navy-800 text-gray-500 dark:text-slate-500 select-none' : ''}`}
         value={localStr}
         onChange={handleChange}
         onFocus={() => setIsFocused(true)}
@@ -79,7 +79,7 @@ const SmartNumberInput = ({
       />
       {suffix && (
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-          <span className="text-gray-400 sm:text-xs font-medium">{suffix}</span>
+          <span className="text-gray-400 dark:text-slate-500 sm:text-xs font-medium">{suffix}</span>
         </div>
       )}
     </div>
@@ -87,9 +87,9 @@ const SmartNumberInput = ({
 };
 
 const ReadOnlyField = ({ label, value }: { label: string, value: string }) => (
-    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{label}</span>
-        <span className="text-sm font-bold text-gray-800">{value}</span>
+    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-white/10 last:border-0">
+        <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">{label}</span>
+        <span className="text-sm font-bold text-gray-800 dark:text-slate-200">{value}</span>
     </div>
 );
 
@@ -109,18 +109,18 @@ const AccordionItem = ({
     badge?: string 
 }) => {
     return (
-        <div className="border-b border-gray-100 last:border-0">
+        <div className="border-b border-gray-100 dark:border-white/10 last:border-0">
             <button 
                 onClick={onToggle}
-                className={`w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors ${isOpen ? 'bg-gray-50/50' : ''}`}
+                className={`w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-navy-800/50 transition-colors ${isOpen ? 'bg-gray-50/50 dark:bg-navy-800/50' : ''}`}
             >
-                <div className="flex items-center gap-2.5 text-gray-700">
-                    <Icon size={16} className={`text-gray-400 ${isOpen ? 'text-blue-600' : ''}`} />
+                <div className="flex items-center gap-2.5 text-gray-700 dark:text-slate-200">
+                    <Icon size={16} className={`text-gray-400 dark:text-slate-500 ${isOpen ? 'text-blue-600 dark:text-gold-400' : ''}`} />
                     <span className="text-sm font-bold tracking-wide">{title}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    {badge && <span className="text-[10px] font-medium bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{badge}</span>}
-                    {isOpen ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                    {badge && <span className="text-[10px] font-medium bg-gray-100 dark:bg-navy-700 text-gray-500 dark:text-slate-300 px-1.5 py-0.5 rounded">{badge}</span>}
+                    {isOpen ? <ChevronUp size={16} className="text-gray-400 dark:text-slate-500" /> : <ChevronDown size={16} className="text-gray-400 dark:text-slate-500" />}
                 </div>
             </button>
             
@@ -134,7 +134,7 @@ const AccordionItem = ({
 };
 
 const InputLabel = ({ label }: { label: string }) => (
-    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">{label}</label>
+    <label className="block text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{label}</label>
 );
 
 // --- MAIN COMPONENT ---
@@ -292,36 +292,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // New Handler for Marketplace Apply
   const handleApplyDiscount = () => {
       setIsApplyingDiscount(true);
-      // 1. Update the setting
+      // 1. Update the setting state
       updateSettings({ ...settings, marketplaceDiscount: localDiscount });
       
-      // 2. Lock the snapshot (overwrite active book with new discount in snapshot)
-      // We use a slight delay to ensure setting prop propagates or simply call overwrite in sequence if workspace handles it correctly.
-      // But updateSettings is likely async in terms of render cycle. 
-      // Ideally Workspace should handle this atomic operation, but Sidebar triggers it.
-      // We'll optimistically wait a tick then trigger overwrite if a book is active.
-      setTimeout(() => {
-          if (settings.activePriceBookId) {
-              onOverwriteBook();
-              setToast({ message: 'Marketplace List Prices updated & locked.', type: 'success' });
-          }
-          setIsApplyingDiscount(false);
-      }, 100);
+      // 2. Lock the snapshot IMMEDIATELY with the explicit local value
+      // This bypasses the need for waiting on state prop propagation (no race condition)
+      if (settings.activePriceBookId) {
+          onOverwriteBook({ marketplaceDiscount: localDiscount });
+          setToast({ message: `Marketplace List Prices updated (Discount: ${localDiscount}%)`, type: 'success' });
+      }
+      
+      setIsApplyingDiscount(false);
   };
 
   const getHeaderStyle = () => {
       switch(activeTab) {
-          case 'builder': return isDesktopCollapsed ? 'bg-gray-900 h-full' : 'bg-gray-900 text-white';
-          case 'monitor': return isDesktopCollapsed ? 'bg-emerald-900 h-full' : 'bg-emerald-900 text-white';
-          case 'marketplace': return isDesktopCollapsed ? 'bg-indigo-900 h-full' : 'bg-indigo-900 text-white';
+          case 'builder': return isDesktopCollapsed ? 'bg-gray-900 h-full dark:bg-navy-950' : 'bg-gray-900 text-white dark:bg-navy-950';
+          case 'monitor': return isDesktopCollapsed ? 'bg-emerald-900 h-full dark:bg-emerald-950' : 'bg-emerald-900 text-white dark:bg-emerald-950';
+          case 'marketplace': return isDesktopCollapsed ? 'bg-indigo-900 h-full dark:bg-indigo-950' : 'bg-indigo-900 text-white dark:bg-indigo-950';
       }
   };
 
   const getHeaderIcon = () => {
       switch(activeTab) {
-        case 'builder': return <div className={`p-1.5 bg-blue-600 rounded-md shadow-sm ${isDesktopCollapsed ? 'mb-4 mx-auto' : ''}`}><Calculator size={14} className="text-white"/></div>;
-        case 'monitor': return <div className={`p-1.5 bg-emerald-500 rounded-md shadow-sm ${isDesktopCollapsed ? 'mb-4 mx-auto' : ''}`}><TrendingUp size={14} className="text-white"/></div>;
-        case 'marketplace': return <div className={`p-1.5 bg-indigo-500 rounded-md shadow-sm ${isDesktopCollapsed ? 'mb-4 mx-auto' : ''}`}><ShoppingBag size={14} className="text-white"/></div>;
+        case 'builder': return <div className={`p-1.5 bg-blue-600 dark:bg-gold-500 rounded-md shadow-sm ${isDesktopCollapsed ? 'mb-4 mx-auto' : ''}`}><Calculator size={14} className="text-white"/></div>;
+        case 'monitor': return <div className={`p-1.5 bg-emerald-500 dark:bg-emerald-600 rounded-md shadow-sm ${isDesktopCollapsed ? 'mb-4 mx-auto' : ''}`}><TrendingUp size={14} className="text-white"/></div>;
+        case 'marketplace': return <div className={`p-1.5 bg-indigo-500 dark:bg-indigo-600 rounded-md shadow-sm ${isDesktopCollapsed ? 'mb-4 mx-auto' : ''}`}><ShoppingBag size={14} className="text-white"/></div>;
       }
   };
   
@@ -336,7 +332,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const MobileToggle = () => (
     <button 
         onClick={() => setIsMobileOpen(true)}
-        className="md:hidden fixed top-20 left-4 z-40 bg-gray-900 text-white p-2 rounded-full shadow-lg"
+        className="md:hidden fixed top-20 left-4 z-40 bg-gray-900 dark:bg-navy-800 text-white p-2 rounded-full shadow-lg"
     >
         <Menu size={20} />
     </button>
@@ -397,15 +393,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
         </div>
 
-        <div className="flex-1 overflow-y-auto scrollbar-thin bg-white pb-20 md:pb-0">
+        <div className="flex-1 overflow-y-auto scrollbar-thin bg-white dark:bg-navy-900 pb-20 md:pb-0">
             {activeTab === 'marketplace' ? (
                 <div className="p-5 animate-in slide-in-from-left-2 duration-300">
-                    <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-6">
-                        <div className="flex items-center gap-2 text-indigo-700 font-bold mb-2">
+                    <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl p-4 mb-6">
+                        <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-400 font-bold mb-2">
                             <Tag size={16} />
                             <span>Listing Strategy</span>
                         </div>
-                        <p className="text-xs text-indigo-600/80 leading-relaxed">
+                        <p className="text-xs text-indigo-600/80 dark:text-indigo-300/80 leading-relaxed">
                             Enter the discount percentage you plan to offer on the marketplace.
                         </p>
                     </div>
@@ -421,20 +417,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <button 
                                 onClick={handleApplyDiscount}
                                 disabled={isApplyingDiscount}
-                                className="w-full mt-2 bg-indigo-600 text-white rounded-lg py-2 text-xs font-bold hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                className="w-full mt-2 bg-indigo-600 dark:bg-indigo-600 text-white rounded-lg py-2 text-xs font-bold hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                             >
                                 {isApplyingDiscount ? <RefreshCw size={12} className="animate-spin" /> : <ArrowRight size={12} />}
                                 Apply & Lock List Prices
                             </button>
                             
-                            <p className="text-[10px] text-gray-400 mt-2 text-center">
+                            <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-2 text-center">
                                 Locking updates the active price book snapshot.
                             </p>
                         </div>
-                        <div className="pt-4 border-t border-gray-100">
-                             <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Formula</h4>
-                             <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-xs font-mono text-gray-600 break-all">
-                                 ListPrice = Sale / (1-{settings.marketplaceDiscount}%)
+                        <div className="pt-4 border-t border-gray-100 dark:border-white/10">
+                             <h4 className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">Formula</h4>
+                             <div className="bg-gray-50 dark:bg-navy-950 p-3 rounded-lg border border-gray-200 dark:border-white/10 text-xs font-mono text-gray-600 dark:text-slate-300 break-all">
+                                 ListPrice = Sale / (1 - {localDiscount}%)
                              </div>
                         </div>
                     </div>
@@ -443,8 +439,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                  <div className="p-5 animate-in slide-in-from-left-2 duration-300">
                     {/* Monitor Sub-Mode Settings */}
                     {monitorSubMode === 'coupon' && settings.marketplace === 'etsy' && (
-                        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6 animate-in slide-in-from-top-2">
-                            <div className="flex items-center gap-2 text-indigo-800 font-bold mb-3 text-sm">
+                        <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 mb-6 animate-in slide-in-from-top-2">
+                            <div className="flex items-center gap-2 text-indigo-800 dark:text-indigo-300 font-bold mb-3 text-sm">
                                 <Tag size={16} /> Coupon Settings
                             </div>
                             <InputLabel label="Coupon Discount %" />
@@ -465,8 +461,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     )}
 
                     {monitorSubMode === 'offsite' && settings.marketplace === 'etsy' && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 animate-in slide-in-from-top-2">
-                            <div className="flex items-center gap-2 text-amber-800 font-bold mb-3 text-sm">
+                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-6 animate-in slide-in-from-top-2">
+                            <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold mb-3 text-sm">
                                 <Globe size={16} /> Offsite Ads Settings
                             </div>
                             <InputLabel label="Offsite Fee %" />
@@ -488,15 +484,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     {snapshot ? (
                         <>
-                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-start gap-2">
-                                <Lock size={16} className="text-amber-600 mt-0.5 shrink-0" />
-                                <div className="text-xs text-amber-800 leading-relaxed">
+                            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-4 flex items-start gap-2">
+                                <Lock size={16} className="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                                <div className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
                                     <span className="font-bold">Locked:</span> Values are fixed from the active price book snapshot.
                                 </div>
                             </div>
                             
-                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 mt-6">Locked Cost Basis</h4>
-                            <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 space-y-1">
+                            <h4 className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2 mt-6">Locked Cost Basis</h4>
+                            <div className="bg-gray-50 dark:bg-navy-950 rounded-xl border border-gray-200 dark:border-white/10 p-4 space-y-1">
                                 <ReadOnlyField label="Labor Model" value={snapshot.laborModel} />
                                 <ReadOnlyField label="Labor Milyem" value={snapshot.laborMilyem.toString()} />
                                 <ReadOnlyField label="Shipping" value={formatCurrency(snapshot.shippingCost)} />
@@ -504,15 +500,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 <ReadOnlyField label="Overhead" value={formatCurrency(snapshot.overheadCost)} />
                             </div>
 
-                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 mt-6">Marketplace Fees</h4>
-                            <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 space-y-1">
+                            <h4 className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2 mt-6">Marketplace Fees</h4>
+                            <div className="bg-gray-50 dark:bg-navy-950 rounded-xl border border-gray-200 dark:border-white/10 p-4 space-y-1">
                                 <ReadOnlyField label="Etsy Fee" value={`${snapshot.marketplaceRates.etsy}%`} />
                                 <ReadOnlyField label="Shopify Fee" value={`${snapshot.marketplaceRates.shopify}%`} />
                             </div>
                         </>
                     ) : (
-                        <div className="text-center py-10 text-gray-400">
-                            <AlertCircle size={32} className="mx-auto mb-2 text-gray-300" />
+                        <div className="text-center py-10 text-gray-400 dark:text-slate-600">
+                            <AlertCircle size={32} className="mx-auto mb-2 text-gray-300 dark:text-slate-700" />
                             <p className="text-sm">No snapshot data found for this book.</p>
                             <p className="text-xs mt-1">Calculations will fallback to current draft settings.</p>
                         </div>
@@ -531,8 +527,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             {/* ... Strategy Content ... */}
                             <div className="space-y-5">
                                 {selectedKarat && (
-                                    <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 p-2 rounded-lg text-[10px] text-blue-700 font-bold uppercase tracking-wide">
-                                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                                    <div className="flex items-center gap-2 bg-blue-50 dark:bg-navy-800 border border-blue-100 dark:border-blue-900 p-2 rounded-lg text-[10px] text-blue-700 dark:text-blue-300 font-bold uppercase tracking-wide">
+                                        <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-gold-500 animate-pulse"></div>
                                         Editing {selectedKarat} Settings Only
                                     </div>
                                 )}
@@ -545,26 +541,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                         <select
                                             value={activeProfitConfig.profitTargetMode}
                                             onChange={(e) => handleUpdateScoped('profitTargetMode', e.target.value)}
-                                            className="w-full appearance-none bg-white border border-gray-300 rounded-md py-2 pl-3 pr-8 text-xs font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                                            className="w-full appearance-none bg-white dark:bg-navy-950 border border-gray-300 dark:border-white/20 rounded-md py-2 pl-3 pr-8 text-xs font-bold text-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-gold-500 focus:border-blue-500 dark:focus:border-gold-500 shadow-sm"
                                         >
                                             <option value="PERCENT">Target % (Fixed)</option>
                                             <option value="USD">Target $ (Fixed)</option>
                                             <option value="VARIABLE_PERCENT">Target Var % + Fixed $</option>
                                         </select>
-                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500 dark:text-slate-400">
                                             <ChevronDown size={14} />
                                         </div>
                                     </div>
 
                                     {activeProfitConfig.profitTargetMode === 'VARIABLE_PERCENT' ? (
-                                        <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-3 space-y-4">
+                                        <div className="bg-blue-50/50 dark:bg-navy-800/50 border border-blue-100 dark:border-blue-900 rounded-lg p-3 space-y-4">
                                             <div>
                                                 <div className="flex justify-between items-center mb-1">
-                                                     <span className="text-[10px] font-bold text-gray-500 uppercase">Target % Curve</span>
+                                                     <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase">Target % Curve</span>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div>
-                                                        <label className="text-[9px] text-center block text-gray-400 mb-0.5">Start</label>
+                                                        <label className="text-[9px] text-center block text-gray-400 dark:text-slate-500 mb-0.5">Start</label>
                                                         <SmartNumberInput 
                                                             suffix="%" 
                                                             className="text-center font-bold"
@@ -573,7 +569,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="text-[9px] text-center block text-gray-400 mb-0.5">End</label>
+                                                        <label className="text-[9px] text-center block text-gray-400 dark:text-slate-500 mb-0.5">End</label>
                                                         <SmartNumberInput 
                                                             suffix="%" 
                                                             className="text-center font-bold"
@@ -586,7 +582,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                                             <div>
                                                  <div className="flex justify-between items-center mb-1">
-                                                     <span className="text-[10px] font-bold text-gray-500 uppercase">Fixed Profit (+ $)</span>
+                                                     <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase">Fixed Profit (+ $)</span>
                                                  </div>
                                                  <SmartNumberInput 
                                                      prefix="$"
@@ -611,7 +607,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     <InputLabel label="Rounding (.99)" />
                                     <button 
                                         onClick={() => handleUpdateScoped('psychologicalRounding', !activeProfitConfig.psychologicalRounding)}
-                                        className={`w-9 h-5 rounded-full relative transition-colors duration-200 ${activeProfitConfig.psychologicalRounding ? 'bg-blue-600' : 'bg-gray-300'}`}
+                                        className={`w-9 h-5 rounded-full relative transition-colors duration-200 ${activeProfitConfig.psychologicalRounding ? 'bg-blue-600 dark:bg-gold-500' : 'bg-gray-300 dark:bg-navy-700'}`}
                                     >
                                         <span className={`absolute top-1 left-1 w-3 h-3 rounded-full bg-white transition-transform duration-200 shadow-sm ${activeProfitConfig.psychologicalRounding ? 'translate-x-4' : ''}`} />
                                     </button>
@@ -620,11 +616,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </AccordionItem>
 
                     {/* NEW: Price Book Actions */}
-                    <div className="px-4 py-4 bg-gray-50 border-b border-gray-200 sticky top-0 z-10 flex flex-col gap-3">
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Price Book Actions</span>
+                    <div className="px-4 py-4 bg-gray-50 dark:bg-navy-800/50 border-b border-gray-200 dark:border-white/10 sticky top-0 z-10 flex flex-col gap-3">
+                        <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Price Book Actions</span>
                         <div>
                             <input 
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+                                className="w-full border border-gray-300 dark:border-white/20 rounded-lg px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-blue-500 dark:focus:ring-gold-500 focus:border-blue-500 dark:focus:border-gold-500 outline-none bg-white dark:bg-navy-950 text-gray-900 dark:text-white"
                                 placeholder="e.g. Etsy – Ring – Jan 24 (Mixed)"
                                 value={priceBookName}
                                 onChange={(e) => setPriceBookName(e.target.value)}
@@ -634,14 +630,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <button 
                                 onClick={handleSaveClick}
                                 disabled={!priceBookName.trim()}
-                                className="flex-1 px-3 py-2 bg-gray-900 text-white rounded-lg text-xs font-bold hover:bg-black shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex-1 px-3 py-2 bg-gray-900 dark:bg-gold-500 text-white rounded-lg text-xs font-bold hover:bg-black dark:hover:bg-gold-600 shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <Save size={14} /> Save New
                             </button>
                             {settings.activePriceBookId && (
                                 <button 
                                     onClick={handleOverwriteClick}
-                                    className="flex-1 px-3 py-2 bg-white text-amber-700 border border-amber-200 rounded-lg text-xs font-bold hover:bg-amber-50 shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap"
+                                    className="flex-1 px-3 py-2 bg-white dark:bg-navy-800 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg text-xs font-bold hover:bg-amber-50 dark:hover:bg-navy-700 shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap"
                                 >
                                     <RefreshCw size={14} /> Overwrite
                                 </button>
@@ -666,8 +662,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                         onChange={(v) => handleUpdateGlobal('goldPricePerGram', v)}
                                         disabled={true} // Read Only as per request
                                     />
-                                    <div className="absolute inset-0 bg-gray-50/50 cursor-not-allowed group-hover:bg-gray-100/50 transition-colors rounded-md flex items-center justify-center opacity-0 hover:opacity-100">
-                                        <span className="text-[10px] text-gray-500 font-bold bg-white px-2 py-1 rounded shadow-sm border border-gray-200">Read Only</span>
+                                    <div className="absolute inset-0 bg-gray-50/50 dark:bg-navy-900/50 cursor-not-allowed group-hover:bg-gray-100/50 dark:group-hover:bg-navy-800/50 transition-colors rounded-md flex items-center justify-center opacity-0 hover:opacity-100">
+                                        <span className="text-[10px] text-gray-500 dark:text-slate-300 font-bold bg-white dark:bg-navy-800 px-2 py-1 rounded shadow-sm border border-gray-200 dark:border-white/10">Read Only</span>
                                     </div>
                                 </div>
                             </div>
@@ -684,7 +680,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <div>
                                 <InputLabel label="Labor Cost Model" />
                                 <select 
-                                    className="w-full text-xs rounded-md border-gray-300 py-2 bg-white text-gray-700 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 shadow-sm"
+                                    className="w-full text-xs rounded-md border-gray-300 dark:border-white/20 py-2 bg-white dark:bg-navy-950 text-gray-700 dark:text-white focus:ring-2 focus:ring-blue-600 dark:focus:ring-gold-500 focus:border-blue-600 dark:focus:border-gold-500 shadow-sm"
                                     value={settings.laborModel}
                                     onChange={(e) => handleUpdateGlobal('laborModel', e.target.value)}
                                 >
@@ -699,7 +695,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     value={settings.laborMilyem} 
                                     onChange={(v) => handleUpdateGlobal('laborMilyem', Math.min(1000, Math.max(0, v)))} 
                                 />
-                                <div className="text-[9px] text-gray-400 mt-1 italic">100 milyem = %10 of 24K Price</div>
+                                <div className="text-[9px] text-gray-400 dark:text-slate-500 mt-1 italic">100 milyem = %10 of 24K Price</div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
@@ -729,12 +725,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <div>
                             <InputLabel label="Heatmap Thresholds ($)" />
                             <div className="grid grid-cols-2 gap-3 mt-2">
-                                <div className="bg-red-50 p-2 rounded border border-red-100">
-                                    <span className="block text-[10px] text-red-800 font-bold mb-1">Critical &le;</span>
+                                <div className="bg-red-50 dark:bg-red-900/30 p-2 rounded border border-red-100 dark:border-red-900/50">
+                                    <span className="block text-[10px] text-red-800 dark:text-red-300 font-bold mb-1">Critical &le;</span>
                                     <SmartNumberInput value={settings.colorThresholds.darkRed} onChange={(v) => handleColorThresholdUpdate('darkRed', v)} />
                                 </div>
-                                <div className="bg-green-50 p-2 rounded border border-green-100">
-                                    <span className="block text-[10px] text-green-700 font-bold mb-1">Success &ge;</span>
+                                <div className="bg-green-50 dark:bg-green-900/30 p-2 rounded border border-green-100 dark:border-green-900/50">
+                                    <span className="block text-[10px] text-green-700 dark:text-green-300 font-bold mb-1">Success &ge;</span>
                                     <SmartNumberInput value={settings.colorThresholds.lightGreen} onChange={(v) => handleColorThresholdUpdate('lightGreen', v)} />
                                 </div>
                             </div>
@@ -744,21 +740,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
         </div>
         
-        <div className="p-4 border-t border-gray-200 bg-gray-50 text-center">
-            <button onClick={onExport} className="text-xs text-gray-500 hover:text-gray-900 font-medium underline">
+        <div className="p-4 border-t border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-navy-800 text-center">
+            <button onClick={onExport} className="text-xs text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white font-medium underline">
                 Export Project JSON
             </button>
         </div>
 
         {/* Confirmation Modal (Pending Updates) */}
         {pendingUpdate && (
-             <div className="fixed inset-0 z-[60] bg-white/95 backdrop-blur-sm flex items-center justify-center p-6 text-center animate-in fade-in duration-200">
-              <div className="max-w-sm w-full bg-white border border-gray-200 shadow-2xl rounded-xl p-6">
-                  <div className="mx-auto w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-4">
+             <div className="fixed inset-0 z-[60] bg-white/95 dark:bg-navy-950/95 backdrop-blur-sm flex items-center justify-center p-6 text-center animate-in fade-in duration-200">
+              <div className="max-w-sm w-full bg-white dark:bg-navy-900 border border-gray-200 dark:border-white/10 shadow-2xl rounded-xl p-6">
+                  <div className="mx-auto w-12 h-12 bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 rounded-full flex items-center justify-center mb-4">
                       <AlertTriangle size={24} />
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-2">Update Prices?</h3>
-                  <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-2">Update Prices?</h3>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mb-6 leading-relaxed">
                       You have manually edited prices. Changing this parameter will affect calculations.
                   </p>
                   <div className="space-y-2">
@@ -770,13 +766,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       </button>
                       <button 
                         onClick={() => confirmUpdate(false)}
-                        className="w-full py-2.5 bg-gray-900 text-white rounded-lg text-xs font-bold hover:bg-black"
+                        className="w-full py-2.5 bg-gray-900 dark:bg-gold-500 text-white rounded-lg text-xs font-bold hover:bg-black dark:hover:bg-gold-600"
                       >
                           Keep Manuals & Update Others
                       </button>
                       <button 
                         onClick={() => setPendingUpdate(null)}
-                        className="w-full py-2.5 text-gray-500 hover:text-gray-800 text-xs font-medium"
+                        className="w-full py-2.5 text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 text-xs font-medium"
                       >
                           Cancel
                       </button>
@@ -787,13 +783,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Overwrite Confirmation Modal */}
         {showOverwriteConfirm && (
-             <div className="fixed inset-0 z-[60] bg-white/95 backdrop-blur-sm flex items-center justify-center p-6 text-center animate-in fade-in duration-200">
-              <div className="max-w-sm w-full bg-white border border-gray-200 shadow-2xl rounded-xl p-6">
-                  <div className="mx-auto w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-4">
+             <div className="fixed inset-0 z-[60] bg-white/95 dark:bg-navy-950/95 backdrop-blur-sm flex items-center justify-center p-6 text-center animate-in fade-in duration-200">
+              <div className="max-w-sm w-full bg-white dark:bg-navy-900 border border-gray-200 dark:border-white/10 shadow-2xl rounded-xl p-6">
+                  <div className="mx-auto w-12 h-12 bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 rounded-full flex items-center justify-center mb-4">
                       <RefreshCw size={24} />
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-2">Overwrite current pricebook?</h3>
-                  <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-2">Overwrite current pricebook?</h3>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mb-6 leading-relaxed">
                       This will replace the saved values for: <br/><strong>{activeBook?.name}</strong>
                   </p>
                   <div className="space-y-2">
@@ -805,7 +801,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       </button>
                       <button 
                         onClick={() => setShowOverwriteConfirm(false)}
-                        className="w-full py-2.5 text-gray-500 hover:text-gray-800 text-xs font-medium"
+                        className="w-full py-2.5 text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 text-xs font-medium"
                       >
                           Cancel
                       </button>
@@ -816,7 +812,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Toast Notification */}
         {toast && (
-            <div className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 rounded-full shadow-xl flex items-center gap-2 text-xs font-bold animate-in slide-in-from-bottom-5 fade-in ${toast.type === 'success' ? 'bg-gray-900 text-white' : 'bg-red-600 text-white'}`}>
+            <div className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 rounded-full shadow-xl flex items-center gap-2 text-xs font-bold animate-in slide-in-from-bottom-5 fade-in ${toast.type === 'success' ? 'bg-gray-900 dark:bg-gold-500 text-white' : 'bg-red-600 text-white'}`}>
                 {toast.type === 'success' ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
                 {toast.message}
             </div>
@@ -831,7 +827,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {!isMobileOpen && <MobileToggle />}
 
         {/* 1. Desktop Sidebar (Fixed relative to flex container) */}
-        <div className={`hidden md:flex flex-col h-screen border-r border-gray-200 bg-white shadow-xl z-20 transition-all duration-300 relative ${isDesktopCollapsed ? 'w-14 items-center py-4' : 'w-80'}`}>
+        <div className={`hidden md:flex flex-col h-screen border-r border-gray-200 dark:border-white/10 bg-white dark:bg-navy-900 shadow-xl z-20 transition-all duration-300 relative ${isDesktopCollapsed ? 'w-14 items-center py-4' : 'w-80'}`}>
             {isDesktopCollapsed ? (
                 <>
                     <div className={`w-full h-full absolute inset-0 -z-10 ${getHeaderStyle()}`}></div>
@@ -853,7 +849,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {isMobileOpen && (
             <div className="md:hidden fixed inset-0 z-50 flex">
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileOpen(false)}></div>
-                <div className="w-80 bg-white h-full shadow-2xl relative flex flex-col z-50 animate-in slide-in-from-left-full duration-300">
+                <div className="w-80 bg-white dark:bg-navy-900 h-full shadow-2xl relative flex flex-col z-50 animate-in slide-in-from-left-full duration-300">
                      {sidebarContent}
                 </div>
             </div>

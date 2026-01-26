@@ -5,9 +5,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GoldProfit Pro - Pricing Dashboard</title>
+    <script>
+      // Flash prevention script
+      (function() {
+        try {
+          const saved = localStorage.getItem('gp-theme');
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (saved === 'dark' || (!saved && prefersDark)) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             colors: {
@@ -22,6 +37,12 @@
                 700: '#934e12',
                 800: '#793e15',
                 900: '#643316',
+              },
+              navy: {
+                700: '#162146',
+                800: '#111A33',
+                900: '#0B1024',
+                950: '#050814',
               }
             }
           }
@@ -52,7 +73,7 @@
 }
 </script>
 </head>
-  <body class="bg-gray-50 text-slate-800 antialiased">
+  <body class="bg-gray-50 text-slate-800 antialiased dark:bg-navy-950 dark:text-slate-100 transition-colors duration-300">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

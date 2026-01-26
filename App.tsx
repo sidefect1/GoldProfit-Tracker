@@ -8,6 +8,7 @@ import { ImportReviewModal, ImportResolution } from './components/ImportReviewMo
 import { StoreModal } from './components/StoreModal';
 import { DeleteStoreModal } from './components/DeleteStoreModal';
 import { Login } from './components/Login';
+import { ThemeToggle } from './components/ThemeToggle';
 import { ProjectSettings, KaratEnum, MarketplaceRates, Store } from './types';
 import { DEFAULT_PURITIES, DEFAULT_MARKETPLACE_RATES, DEFAULT_PROJECT } from './constants';
 import { migrateProject } from './utils/migrations';
@@ -16,11 +17,11 @@ import { supabase } from './utils/supabaseClient';
 import { Cloud, CloudOff, CheckCircle, LogOut } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
 
-const GLOBAL_SETTINGS_KEY = 'gold-profit-global-settings';
-const GLOBAL_RATES_KEY = 'gold-profit-global-rates';
 const ACTIVE_STORE_ID_KEY = 'gold-profit-active-store-id';
 const STORES_KEY = 'gold-profit-stores';
 const PROJECTS_KEY = 'gold-profit-projects-v2';
+const GLOBAL_SETTINGS_KEY = 'gold-profit-global-settings';
+const GLOBAL_RATES_KEY = 'gold-profit-global-rates';
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -94,16 +95,13 @@ export default function App() {
     }
   }, [activeStoreId]);
 
-  // Global Settings State
-  const [globalPurities, setGlobalPurities] = useState<Record<KaratEnum, number>>(() => {
-     const saved = localStorage.getItem(GLOBAL_SETTINGS_KEY);
-     return saved ? JSON.parse(saved) : DEFAULT_PURITIES;
-  });
-
-  const [globalRates, setGlobalRates] = useState<MarketplaceRates>(() => {
-    const saved = localStorage.getItem(GLOBAL_RATES_KEY);
-    return saved ? JSON.parse(saved) : DEFAULT_MARKETPLACE_RATES;
-  });
+  const activeStore = stores.find(s => s.id === activeStoreId);
+  
+  // Derived Global Settings from Active Store (Fallback to Constants)
+  const storePurities = activeStore?.purities ?? DEFAULT_PURITIES;
+  const storeRates = activeStore?.marketplaceRates ?? DEFAULT_MARKETPLACE_RATES;
+  const storeCoupon = activeStore?.defaultCouponPercent ?? 30;
+  const storeOffsite = activeStore?.defaultOffsiteAdsPercent ?? 15;
 
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [isGlobalSettingsOpen, setIsGlobalSettingsOpen] = useState(false);
@@ -119,16 +117,7 @@ export default function App() {
     }
   }, [toast]);
 
-  useEffect(() => {
-    localStorage.setItem(GLOBAL_SETTINGS_KEY, JSON.stringify(globalPurities));
-  }, [globalPurities]);
-
-  useEffect(() => {
-    localStorage.setItem(GLOBAL_RATES_KEY, JSON.stringify(globalRates));
-  }, [globalRates]);
-
   const activeProject = projects.find(p => p.id === activeProjectId);
-  const activeStore = stores.find(s => s.id === activeStoreId);
   const displayProjects = projects.filter(p => p.storeId === activeStoreId);
 
   // --- CRUD HANDLERS (Single Item Updates) ---
@@ -157,7 +146,9 @@ export default function App() {
         marketplace: 'etsy',
         createdAt: Date.now(),
         lastModified: Date.now(),
-        purities: globalPurities,
+        purities: storePurities, // Inherit from Store Defaults
+        couponDiscountPercent: storeCoupon,
+        offsiteAdsPercent: storeOffsite,
         isSetupComplete: false, 
         widths: [], 
         sizes: [],
@@ -210,7 +201,12 @@ export default function App() {
           name,
           goldPrice24k: 85.00, 
           createdAt: Date.now(),
-          updatedAt: Date.now()
+          updatedAt: Date.now(),
+          // Initialize defaults
+          purities: DEFAULT_PURITIES,
+          marketplaceRates: DEFAULT_MARKETPLACE_RATES,
+          defaultCouponPercent: 30,
+          defaultOffsiteAdsPercent: 15
       };
       setStores(prev => [...prev, newStore]);
       setActiveStoreId(newStore.id);
@@ -232,6 +228,28 @@ export default function App() {
       if (updatedStore) {
           await api.saveStore(updatedStore, session);
       }
+  };
+
+  const handleSaveGlobalSettings = async (
+      newPurities: Record<KaratEnum, number>,
+      newRates: MarketplaceRates,
+      newCoupon: number,
+      newOffsite: number
+  ) => {
+      if (!activeStore || !session) return;
+
+      const updatedStore: Store = {
+          ...activeStore,
+          purities: newPurities,
+          marketplaceRates: newRates,
+          defaultCouponPercent: newCoupon,
+          defaultOffsiteAdsPercent: newOffsite,
+          updatedAt: Date.now()
+      };
+
+      setStores(prev => prev.map(s => s.id === updatedStore.id ? updatedStore : s));
+      await api.saveStore(updatedStore, session);
+      setToast({ message: `Global settings saved for ${activeStore.name}`, type: 'success' });
   };
 
   const handleConfirmDeleteStore = async (storeId: string) => {
@@ -391,49 +409,49 @@ export default function App() {
       window.location.reload();
   };
 
-  // --- RENDER ---
-
-  if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div></div>;
-
-  if (!session) {
-    return <Login />;
-  }
-
   const ConnectionStatus = () => (
-      <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold shadow-md transition-colors ${isBackendConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+      <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold shadow-md transition-colors ${isBackendConnected ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' : 'bg-gray-100 text-gray-500 dark:bg-navy-800 dark:text-slate-400'}`}>
           {isBackendConnected ? <Cloud size={14} /> : <CloudOff size={14} />}
           {isBackendConnected ? 'Cloud Sync Active' : 'Offline Mode'}
       </div>
   );
 
-  if (!isLoading && !activeStoreId) {
-      return (
-          <StoreModal 
-              stores={stores} 
-              isOpen={true} 
-              onSelect={setActiveStoreId} 
-              onCreate={handleCreateStore}
-          />
-      );
-  }
+  // --- RENDER CONTENT ---
+  const renderContent = () => {
+    if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-navy-950"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div></div>;
 
-  if (activeProject) {
-    return (
-      <>
+    if (!session) {
+      return <Login />;
+    }
+
+    if (!isLoading && !activeStoreId) {
+        return (
+            <StoreModal 
+                stores={stores} 
+                isOpen={true} 
+                onSelect={setActiveStoreId} 
+                onCreate={handleCreateStore}
+            />
+        );
+    }
+
+    if (activeProject) {
+      return (
         <ProjectWorkspace 
             project={activeProject} 
             onUpdate={handleUpdateProject} 
             onBack={() => setActiveProjectId(null)}
             globalGoldPrice={activeStore?.goldPrice24k || 85}
-            marketplaceRates={globalRates}
+            marketplaceRates={storeRates}
+            // Pass derived global settings to Workspace
+            storePurities={storePurities}
+            storeCoupon={storeCoupon}
+            storeOffsite={storeOffsite}
         />
-        <ConnectionStatus />
-      </>
-    );
-  }
+      );
+    }
 
-  return (
-    <>
+    return (
       <ProjectList 
         projects={displayProjects}
         stores={stores}
@@ -456,56 +474,71 @@ export default function App() {
         onUpdateGlobalGold={handleUpdateStoreGold}
         onBatchUpdate={handleBatchUpdateProjects}
       />
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 text-slate-800 dark:bg-navy-950 dark:text-slate-100 transition-colors duration-300">
+      <ThemeToggle />
       
-      <EditProjectModal 
-        isOpen={!!editingProject}
-        onClose={() => setEditingProject(null)}
-        project={editingProject}
-        onUpdate={handleEditSave}
-      />
+      {renderContent()}
 
-      <GlobalSettingsModal 
-        isOpen={isGlobalSettingsOpen}
-        onClose={() => setIsGlobalSettingsOpen(false)}
-        purities={globalPurities}
-        onSave={setGlobalPurities}
-        marketplaceRates={globalRates}
-        onSaveMarketplaceRates={setGlobalRates}
-      />
+      {/* Modals & Overlays */}
+      {session && (
+        <>
+          <EditProjectModal 
+            isOpen={!!editingProject}
+            onClose={() => setEditingProject(null)}
+            project={editingProject}
+            onUpdate={handleEditSave}
+          />
 
-      <ImportReviewModal 
-        isOpen={!!importData}
-        onClose={() => setImportData(null)}
-        importData={importData}
-        existingProjects={projects}
-        onConfirm={handleFinalizeImport}
-      />
+          <GlobalSettingsModal 
+            isOpen={isGlobalSettingsOpen}
+            onClose={() => setIsGlobalSettingsOpen(false)}
+            storeName={activeStore?.name}
+            purities={storePurities}
+            marketplaceRates={storeRates}
+            defaultCoupon={storeCoupon}
+            defaultOffsite={storeOffsite}
+            onSave={handleSaveGlobalSettings}
+          />
 
-      <DeleteStoreModal 
-        isOpen={!!storeToDelete}
-        store={storeToDelete}
-        onClose={() => setStoreToDelete(null)}
-        onConfirm={handleConfirmDeleteStore}
-      />
+          <ImportReviewModal 
+            isOpen={!!importData}
+            onClose={() => setImportData(null)}
+            importData={importData}
+            existingProjects={projects}
+            onConfirm={handleFinalizeImport}
+          />
 
-      {toast && (
-          <div className={`fixed bottom-16 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 rounded-full shadow-xl flex items-center gap-2 text-xs font-bold animate-in slide-in-from-bottom-5 fade-in ${toast.type === 'success' ? 'bg-gray-900 text-white' : 'bg-red-600 text-white'}`}>
-              <CheckCircle size={14} />
-              {toast.message}
-          </div>
+          <DeleteStoreModal 
+            isOpen={!!storeToDelete}
+            store={storeToDelete}
+            onClose={() => setStoreToDelete(null)}
+            onConfirm={handleConfirmDeleteStore}
+          />
+
+          {toast && (
+              <div className={`fixed bottom-16 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 rounded-full shadow-xl flex items-center gap-2 text-xs font-bold animate-in slide-in-from-bottom-5 fade-in ${toast.type === 'success' ? 'bg-gray-900 text-white dark:bg-gold-600' : 'bg-red-600 text-white'}`}>
+                  <CheckCircle size={14} />
+                  {toast.message}
+              </div>
+          )}
+
+          {/* Logout Button */}
+          <button 
+              onClick={handleLogout}
+              className="fixed top-4 right-16 z-50 flex items-center gap-2 px-3 py-2 bg-white/90 dark:bg-navy-900/90 backdrop-blur-sm border border-gray-200 dark:border-white/10 rounded-lg shadow-sm text-xs font-bold text-gray-500 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all group"
+              title="Sign out and clear local data"
+          >
+              <LogOut size={14} className="group-hover:scale-110 transition-transform" />
+              <span className="hidden md:inline">Log Out</span>
+          </button>
+
+          <ConnectionStatus />
+        </>
       )}
-
-      {/* Visible Logout & Reset Button */}
-      <button 
-          onClick={handleLogout}
-          className="fixed top-4 right-4 z-50 flex items-center gap-2 px-3 py-2 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg shadow-sm text-xs font-bold text-gray-500 hover:text-red-600 hover:bg-red-50 transition-all group"
-          title="Sign out and clear local data"
-      >
-          <LogOut size={14} className="group-hover:scale-110 transition-transform" />
-          <span>Log Out</span>
-      </button>
-
-      <ConnectionStatus />
-    </>
+    </div>
   );
 }
