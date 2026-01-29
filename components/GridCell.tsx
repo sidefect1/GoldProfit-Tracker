@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { formatCurrency, formatNumber } from '../utils/calculations';
-import { ProjectSettings, CalculationResult } from '../types';
-import { Edit2 } from 'lucide-react';
+import { ProjectSettings, CalculationResult, ManualOverridePolicy } from '../types';
+import { Edit2, Lock, Star } from 'lucide-react';
 
 interface GridCellProps {
   data: CalculationResult;
@@ -13,10 +13,11 @@ interface GridCellProps {
   activeTooltipId?: string | null;
   onHover?: (id: string | null, data?: CalculationResult, rect?: DOMRect) => void;
   cellId?: string;
-  // New props for enhanced UX
   isHighlighted?: boolean;
   zoomLevel?: number; // 0: Compact, 1: Normal, 2: Large
-  onClick?: () => void;
+  onClick?: (rect: DOMRect) => void;
+  overridePolicy?: ManualOverridePolicy;
+  isPinned?: boolean;
 }
 
 export const GridCell: React.FC<GridCellProps> = ({ 
@@ -29,19 +30,19 @@ export const GridCell: React.FC<GridCellProps> = ({
     cellId,
     isHighlighted = false,
     zoomLevel = 1,
-    onClick
+    onClick,
+    overridePolicy = 'ASK',
+    isPinned = false
 }) => {
   const [interactionState, setInteractionState] = useState<'idle' | 'selected' | 'editing'>('idle');
   const [editValue, setEditValue] = useState(data.salePrice.toString());
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Reset state if data changes externally
   useEffect(() => {
       setEditValue(data.salePrice.toString());
   }, [data.salePrice]);
 
-  // Click Outside Listener to reset 'selected' state
   useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
           if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -54,28 +55,27 @@ export const GridCell: React.FC<GridCellProps> = ({
       return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [interactionState]);
 
-  // Heatmap Logic
   const getBackgroundColor = (profit: number) => {
     if (profit <= thresholds.darkRed) return 'bg-red-800 text-white border-red-900';
     if (profit < thresholds.lightRed) return 'bg-red-200 dark:bg-red-900 text-red-900 dark:text-red-100 border-red-300 dark:border-red-800';
     if (profit < thresholds.lightGreen) return 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 border-green-200 dark:border-green-800';
     if (profit < thresholds.darkGreen) return 'bg-green-300 dark:bg-green-800 text-green-900 dark:text-green-50 border-green-400 dark:border-green-700';
-    return 'bg-green-600 dark:bg-green-700 text-white border-green-700 dark:border-green-600'; // Super profit
+    return 'bg-green-600 dark:bg-green-700 text-white border-green-700 dark:border-green-600';
   };
 
   const colorClass = getBackgroundColor(data.profitUSD);
 
-  // Interaction Handlers
   const handleClick = (e: React.MouseEvent) => {
-      // Trigger parent click for highlighting
-      if (onClick) onClick();
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect && onClick) {
+          onClick(rect);
+      }
 
-      // Only allow edit in Builder mode when in Price View (or generic override allowed)
       if (activeMode === 'builder' && onOverride) {
           e.stopPropagation(); 
           if (interactionState === 'idle') {
               setInteractionState('selected');
-              if (onHover) onHover(null); // Hide tooltip when selected
+              if (onHover) onHover(null); 
           } else if (interactionState === 'selected') {
               setInteractionState('editing');
           }
@@ -97,7 +97,6 @@ export const GridCell: React.FC<GridCellProps> = ({
 
   const handleSaveEdit = () => {
       const val = parseFloat(editValue);
-      // Only save if number is valid AND different from original
       if (!isNaN(val) && onOverride && val !== data.salePrice) {
           onOverride(data, val);
       }
@@ -112,17 +111,15 @@ export const GridCell: React.FC<GridCellProps> = ({
       }
   };
 
-  // Zoom Level Styling
   const getZoomStyles = () => {
       switch(zoomLevel) {
-          case 0: return { height: 'h-8', text: 'text-[10px]', padding: 'px-1' }; // Compact
-          case 2: return { height: 'h-16', text: 'text-sm', padding: 'px-3' }; // Large
-          case 1: default: return { height: 'h-12', text: 'text-xs', padding: 'px-2' }; // Normal
+          case 0: return { height: 'h-8', text: 'text-[10px]', padding: 'px-1' }; 
+          case 2: return { height: 'h-16', text: 'text-sm', padding: 'px-3' }; 
+          case 1: default: return { height: 'h-12', text: 'text-xs', padding: 'px-2' }; 
       }
   };
   const zoomStyles = getZoomStyles();
 
-  // Render Content
   const renderContent = () => {
     if (interactionState === 'editing') {
         return (
@@ -139,7 +136,6 @@ export const GridCell: React.FC<GridCellProps> = ({
         );
     }
 
-    // If Marketplace mode, override viewMode and show the List Price
     if (activeMode === 'marketplace') {
         return (
             <span className="font-mono font-bold">{formatCurrency(data.marketplaceSalePrice)}</span>
@@ -150,11 +146,16 @@ export const GridCell: React.FC<GridCellProps> = ({
       case 'price': 
         return (
             <div className="flex items-center gap-1 relative z-10 justify-center">
-                {/* Manual Override Indicator */}
-                {data.isOverridden && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-white/60 shadow-sm" title="Manually Set" />
-                )}
                 {formatCurrency(data.salePrice)}
+                {data.isOverridden && (
+                    <div className="ml-0.5" title={overridePolicy === 'KEEP_ALL' ? "Manual override (kept by session policy)" : "Manual override exists"}>
+                        {overridePolicy === 'KEEP_ALL' ? (
+                            <Lock size={10} className="text-gold-600 dark:text-gold-300 opacity-80" />
+                        ) : (
+                            <Star size={10} className="text-gold-600 dark:text-gold-300 opacity-80" fill="currentColor" />
+                        )}
+                    </div>
+                )}
             </div>
         );
       case 'cost': return formatCurrency(data.totalCost);
@@ -163,7 +164,6 @@ export const GridCell: React.FC<GridCellProps> = ({
         return (
           <div className="flex flex-col leading-tight items-center relative z-10 w-full">
             <span className="font-bold">{formatCurrency(data.profitUSD)}</span>
-            {/* Hide % on compact mobile view unless zoom level is high */}
             {(zoomLevel > 0 || window.innerWidth > 640) && (
                 <span className={`opacity-80 font-normal ${zoomLevel === 0 ? 'text-[8px]' : 'text-[10px]'}`}>{formatNumber(data.profitPercent, 0)}%</span>
             )}
@@ -173,19 +173,20 @@ export const GridCell: React.FC<GridCellProps> = ({
     }
   };
 
-  // Custom styling
   const cellClass = activeMode === 'marketplace' 
       ? `bg-indigo-50 dark:bg-indigo-900 text-indigo-900 dark:text-indigo-100 border-indigo-100 dark:border-indigo-800` 
       : colorClass; 
   
   const cursorClass = (activeMode === 'builder' && interactionState !== 'editing') ? 'cursor-pointer' : 'cursor-default';
-
-  // Selection Overlay (The "Pencil" state)
   const isSelected = interactionState === 'selected';
 
-  // Highlight Overlay (Row/Col hover)
   const highlightOverlay = isHighlighted && !isSelected ? (
       <div className="absolute inset-0 bg-white/20 dark:bg-white/5 pointer-events-none z-20 mix-blend-overlay"></div>
+  ) : null;
+
+  // Persistent Pin Highlight
+  const pinOverlay = isPinned && !isSelected ? (
+      <div className="absolute inset-0 ring-2 ring-inset ring-gold-500/60 dark:ring-gold-400/60 pointer-events-none z-20"></div>
   ) : null;
 
   return (
@@ -195,14 +196,11 @@ export const GridCell: React.FC<GridCellProps> = ({
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      title={activeMode === 'builder' ? 'Click to Select, Click again to Edit' : undefined}
+      title={activeMode === 'builder' ? 'Click to Select/Pin Details' : undefined}
     >
       {highlightOverlay}
-      
-      {/* Content */}
+      {pinOverlay}
       {renderContent()}
-      
-      {/* Edit Overlay (Pencil) */}
       {isSelected && (
           <div className="absolute inset-0 bg-blue-600/90 dark:bg-gold-600/90 flex items-center justify-center text-white backdrop-blur-[1px] animate-in fade-in duration-100 cursor-pointer z-40">
               <Edit2 size={16} />

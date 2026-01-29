@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ProjectSettings, MarketplaceRates, ProjectSnapshot, KaratEnum, ProfitConfig } from '../types';
+import { ProjectSettings, MarketplaceRates, ProjectSnapshot, KaratEnum, ProfitConfig, ManualOverridePolicy } from '../types';
 import { Save, AlertCircle, DollarSign, Package, Layers, TrendingUp, Calculator, Book, Globe, Lock, Info, ChevronDown, ChevronUp, ShoppingBag, Tag, ChevronsLeft, ChevronsRight, RefreshCw, AlertTriangle, X, Menu, LineChart, InfoIcon, Coins, CheckCircle, ArrowRight } from 'lucide-react';
 import { formatCurrency, formatDate, formatNumber } from '../utils/calculations';
 import { DEFAULT_PROFIT_CONFIG } from '../constants';
@@ -17,6 +17,8 @@ interface SidebarProps {
   selectedKarat?: KaratEnum; // New Prop to determine scope
   // For Monitor Mode
   monitorSubMode?: 'standard' | 'coupon' | 'offsite';
+  // Policy Props
+  manualOverridePolicy: ManualOverridePolicy;
 }
 
 // --- HELPER COMPONENTS ---
@@ -149,7 +151,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   globalGoldPrice,
   marketplaceRates,
   selectedKarat,
-  monitorSubMode
+  monitorSubMode,
+  manualOverridePolicy
 }) => {
   
   const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
@@ -198,12 +201,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
       'profitTargetMode', 'profitTargetValue', 'psychologicalRounding', 'variableProfit'
   ];
 
+  // Helper to apply updates with or without wiping manual overrides
+  const applyUpdate = (key: keyof ProjectSettings | keyof ProfitConfig, value: any, scope: 'global' | 'scoped', resetManuals: boolean) => {
+      let newSettings = { ...settings };
+      if (resetManuals) newSettings.priceOverrides = {};
+
+      if (scope === 'global') {
+          newSettings = { ...newSettings, [key as keyof ProjectSettings]: value };
+      } else if (scope === 'scoped' && selectedKarat) {
+          const currentStrategy = settings.profitStrategyByKarat?.[selectedKarat] || DEFAULT_PROFIT_CONFIG;
+          const updatedStrategy = { ...currentStrategy, [key as keyof ProfitConfig]: value };
+          newSettings.profitStrategyByKarat = {
+              ...newSettings.profitStrategyByKarat,
+              [selectedKarat]: updatedStrategy
+          };
+      }
+      updateSettings(newSettings);
+  };
+
   const handleUpdateGlobal = (field: keyof ProjectSettings, value: any) => {
       const hasOverrides = settings.priceOverrides && Object.keys(settings.priceOverrides).length > 0;
       const affectsCalculation = CALCULATION_FIELDS_GLOBAL.includes(field as string);
 
       if (hasOverrides && affectsCalculation && activeTab === 'builder') {
-          setPendingUpdate({ key: field, value, scope: 'global' });
+          // Check Policy before showing modal
+          if (manualOverridePolicy === 'KEEP_ALL') {
+              applyUpdate(field, value, 'global', false); // Auto Keep
+          } else if (manualOverridePolicy === 'RECALC_ALL') {
+              applyUpdate(field, value, 'global', true); // Auto Reset
+          } else {
+              setPendingUpdate({ key: field, value, scope: 'global' }); // Ask
+          }
       } else {
           updateSettings({ ...settings, [field]: value });
       }
@@ -216,7 +244,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       const affectsCalculation = CALCULATION_FIELDS_SCOPED.includes(field as string);
 
       if (hasOverrides && affectsCalculation && activeTab === 'builder') {
-          setPendingUpdate({ key: field, value, scope: 'scoped' });
+          // Check Policy
+          if (manualOverridePolicy === 'KEEP_ALL') {
+              applyUpdate(field, value, 'scoped', false); // Auto Keep
+          } else if (manualOverridePolicy === 'RECALC_ALL') {
+              applyUpdate(field, value, 'scoped', true); // Auto Reset
+          } else {
+              setPendingUpdate({ key: field, value, scope: 'scoped' }); // Ask
+          }
       } else {
           const currentStrategy = settings.profitStrategyByKarat?.[selectedKarat] || DEFAULT_PROFIT_CONFIG;
           const updatedStrategy = { ...currentStrategy, [field]: value };
@@ -242,21 +277,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const confirmUpdate = (resetManuals: boolean) => {
       if (!pendingUpdate) return;
       
-      let newSettings = { ...settings };
-      if (resetManuals) newSettings.priceOverrides = {};
-
-      if (pendingUpdate.scope === 'global') {
-          newSettings = { ...newSettings, [pendingUpdate.key as keyof ProjectSettings]: pendingUpdate.value };
-      } else if (pendingUpdate.scope === 'scoped' && selectedKarat) {
-          const currentStrategy = settings.profitStrategyByKarat?.[selectedKarat] || DEFAULT_PROFIT_CONFIG;
-          const updatedStrategy = { ...currentStrategy, [pendingUpdate.key as keyof ProfitConfig]: pendingUpdate.value };
-          newSettings.profitStrategyByKarat = {
-              ...newSettings.profitStrategyByKarat,
-              [selectedKarat]: updatedStrategy
-          };
-      }
-
-      updateSettings(newSettings);
+      // Use the same helper for consistency
+      applyUpdate(
+          pendingUpdate.key, 
+          pendingUpdate.value, 
+          pendingUpdate.scope || 'global', 
+          resetManuals
+      );
       setPendingUpdate(null);
   };
 

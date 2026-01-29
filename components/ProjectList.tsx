@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ProjectSettings, ProductType, ExportPayload, MarketplaceType, Store } from '../types';
-import { Plus, Search, Calendar, MoreVertical, Edit2, Check, X, Filter, ArrowUpDown, ShieldCheck, Archive, Trash2, Copy, Eye, FolderOpen, RefreshCw, RefreshCcw, Download, Upload, CheckSquare, Square, DollarSign, TrendingDown, Activity, AlertTriangle, AlertCircle, ChevronDown, Coins, Tag, Globe, Settings2, Info, Percent, Store as StoreIcon, Building2, ShoppingBag, ListFilter, Settings, UserCircle2, Clock } from 'lucide-react';
+import { Plus, Search, Calendar, MoreVertical, Edit2, Check, X, Filter, ArrowUpDown, ShieldCheck, Archive, Trash2, Copy, Eye, FolderOpen, RefreshCw, RefreshCcw, Download, Upload, CheckSquare, Square, DollarSign, TrendingDown, Activity, AlertTriangle, AlertCircle, ChevronDown, Coins, Tag, Globe, Settings2, Info, Percent, Store as StoreIcon, Building2, ShoppingBag, ListFilter, Settings, UserCircle2, Clock, MinusSquare } from 'lucide-react';
 import { formatDate, calculateProjectHealth, formatCurrency, formatNumber } from '../utils/calculations';
 import { PRODUCT_STYLES, PRODUCT_CONFIGS, DEFAULT_MARKETPLACE_RATES } from '../constants';
 import { CURRENT_SCHEMA_VERSION } from '../utils/migrations';
@@ -327,6 +327,25 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
       setSelectedIds(newSet);
   };
 
+  const handleSelectAll = () => {
+      const visibleIds = filteredAndSortedProjects.map(p => p.id);
+      const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
+      
+      const newSet = new Set(selectedIds);
+      if (allSelected) {
+          // Deselect visible
+          visibleIds.forEach(id => newSet.delete(id));
+      } else {
+          // Select all visible
+          visibleIds.forEach(id => newSet.add(id));
+      }
+      setSelectedIds(newSet);
+  };
+
+  const visibleSelectedCount = filteredAndSortedProjects.filter(p => selectedIds.has(p.id)).length;
+  const isAllSelected = filteredAndSortedProjects.length > 0 && visibleSelectedCount === filteredAndSortedProjects.length;
+  const isIndeterminate = visibleSelectedCount > 0 && !isAllSelected;
+
   const handleExport = () => {
       if (selectedIds.size === 0) return;
       const toExport = projects.filter(p => selectedIds.has(p.id));
@@ -611,6 +630,10 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                 <div className="flex-1"></div>
                 <div className="hidden md:flex items-center gap-2">
                     <div className="flex items-center bg-white dark:bg-navy-900 rounded-lg p-0.5 border border-gray-200 dark:border-white/10 shadow-sm">
+                        <button onClick={handleSelectAll} className="p-1.5 hover:bg-gray-50 dark:hover:bg-navy-800 rounded-md text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-all" title={isAllSelected ? "Deselect All Visible" : "Select All Visible"}>
+                            {isAllSelected ? <CheckSquare size={14} className="text-blue-600 dark:text-gold-500" /> : (isIndeterminate ? <MinusSquare size={14} className="text-blue-600 dark:text-gold-500" /> : <Square size={14} />)}
+                        </button>
+                        <div className="w-px h-3 bg-gray-200 dark:bg-white/10 mx-0.5"></div>
                         <button onClick={handleImportClick} className="p-1.5 hover:bg-gray-50 dark:hover:bg-navy-800 rounded-md text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-all" title="Import"><Upload size={14}/></button>
                         <div className="w-px h-3 bg-gray-200 dark:bg-white/10 mx-0.5"></div>
                         <button onClick={handleExport} disabled={selectedIds.size === 0} className={`p-1.5 rounded-md transition-all ${selectedIds.size > 0 ? 'hover:bg-gray-50 dark:hover:bg-navy-800 text-blue-600 dark:text-blue-400' : 'text-gray-300 dark:text-slate-600 cursor-not-allowed'}`} title="Export"><Download size={14}/></button>
@@ -732,7 +755,12 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                             <div className="flex-1 min-h-[1rem]"></div>
                             {p._health.status !== 'SETUP' && (
                                 <div className="mb-2">
-                                    <div className="flex items-center justify-between text-xs mb-1"><span className="text-gray-500 dark:text-slate-400 font-medium">Est. Min Profit</span><span className={`font-mono font-bold ${p._health.status === 'LOSS' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>{formatCurrency(p._health.minProfit)}</span></div>
+                                    <div className="flex items-center justify-between text-xs mb-1">
+                                        <span className="text-gray-500 dark:text-slate-400 font-medium">Est. Avg Profit</span>
+                                        <span className={`font-mono font-bold ${p._health.avgProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                            {formatCurrency(p._health.avgProfit)}
+                                        </span>
+                                    </div>
                                     <div className="h-1.5 w-full bg-gray-100 dark:bg-navy-700 rounded-full overflow-hidden"><div className={`h-full rounded-full ${p._health.status === 'LOSS' ? 'bg-red-500' : 'bg-green-500'}`}></div></div>
                                 </div>
                             )}

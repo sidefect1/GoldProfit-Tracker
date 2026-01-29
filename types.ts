@@ -5,6 +5,8 @@ export type ProductType = 'RING' | 'NECKLACE' | 'BRACELET' | 'EARRING';
 
 export type MarketplaceType = 'etsy' | 'shopify';
 
+export type ManualOverridePolicy = 'ASK' | 'KEEP_ALL' | 'RECALC_ALL';
+
 export interface AnchorPoints {
   p1: number; // Low point (e.g. Size 4)
   p2: number; // Mid point (e.g. Size 8)

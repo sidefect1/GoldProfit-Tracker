@@ -231,7 +231,6 @@ export const calculateRow = (
   };
 };
 
-// ... exports remain same
 export const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(val);
 };
@@ -253,7 +252,9 @@ export const formatDate = (timestamp: number) => {
 export interface ProjectHealth {
   status: 'LOSS' | 'OK' | 'SETUP';
   minProfit: number;
+  avgProfit: number;
   itemCount: number;
+  lossCount: number;
 }
 
 export const calculateProjectHealth = (
@@ -262,12 +263,15 @@ export const calculateProjectHealth = (
   profitThreshold: number = 0,
   globalMarketplaceRates?: MarketplaceRates
 ): ProjectHealth => {
-  if (!project.activePriceBookId) return { status: 'SETUP', minProfit: 0, itemCount: 0 };
+  if (!project.activePriceBookId) return { status: 'SETUP', minProfit: 0, avgProfit: 0, itemCount: 0, lossCount: 0 };
   const activeBook = project.priceBooks.find(b => b.id === project.activePriceBookId);
-  if (!activeBook) return { status: 'SETUP', minProfit: 0, itemCount: 0 };
+  if (!activeBook) return { status: 'SETUP', minProfit: 0, avgProfit: 0, itemCount: 0, lossCount: 0 };
 
   let minProfit = Infinity;
+  let totalProfit = 0;
   let itemCount = 0;
+  let lossCount = 0;
+
   const sizes = project.sizes && project.sizes.length > 0 
     ? project.sizes 
     : (project.productType === 'EARRING' ? [1] : getSizesForProduct(project.productType));
@@ -280,12 +284,26 @@ export const calculateProjectHealth = (
         const lockedPrice = activeBook.prices[key];
         if (lockedPrice !== undefined) {
           const res = calculateRow(karat, size, width, project, lockedPrice, globalGoldPrice, undefined, globalMarketplaceRates, activeBook.snapshot);
+          
           if (res.profitUSD < minProfit) minProfit = res.profitUSD;
+          totalProfit += res.profitUSD;
+          
+          if (res.profitUSD < profitThreshold) { // Usually 0
+              lossCount++;
+          }
           itemCount++;
         }
       }
     }
   }
-  if (itemCount === 0) return { status: 'SETUP', minProfit: 0, itemCount: 0 };
-  return { status: minProfit < profitThreshold ? 'LOSS' : 'OK', minProfit, itemCount };
+
+  if (itemCount === 0) return { status: 'SETUP', minProfit: 0, avgProfit: 0, itemCount: 0, lossCount: 0 };
+
+  const avgProfit = totalProfit / itemCount;
+  const lossRatio = lossCount / itemCount;
+
+  // New Rule: Only flag as LOSS status if more than 30% of items are unprofitable
+  const status = lossRatio > 0.30 ? 'LOSS' : 'OK';
+
+  return { status, minProfit, avgProfit, itemCount, lossCount };
 };
