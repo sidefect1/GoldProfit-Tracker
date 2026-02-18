@@ -168,19 +168,24 @@ export const api = {
    * Upload Project Image to Storage
    */
   async uploadProjectImage(file: File, projectId: string): Promise<string | null> {
-    if (!this.isBackendAvailable) return null;
+    // Attempt upload regardless of isBackendAvailable flag, as that check relies on DB table access
+    // which might differ from Storage permissions.
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+      // Ensure unique filename every time to bust cache
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
       const filePath = `${projectId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('project-images')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+        });
 
       if (uploadError) {
-        console.error('Upload Error:', uploadError);
+        console.error('Supabase Upload Error:', uploadError);
         throw uploadError;
       }
 
@@ -188,9 +193,10 @@ export const api = {
         .from('project-images')
         .getPublicUrl(filePath);
 
+      console.log("Image uploaded successfully:", publicUrl);
       return publicUrl;
     } catch (e) {
-      console.error("Failed to upload image", e);
+      console.error("Failed to upload image logic:", e);
       return null;
     }
   }

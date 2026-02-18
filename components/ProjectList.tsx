@@ -186,6 +186,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [storeFocusIdx, setStoreFocusIdx] = useState(-1);
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   const marketplaceTriggerRef = useRef<HTMLDivElement>(null);
   const storeTriggerRef = useRef<HTMLDivElement>(null);
@@ -193,6 +194,9 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  
+  // Use a Ref to track the pending upload ID to avoid closure staleness issues in event handlers
+  const pendingUploadIdRef = useRef<string | null>(null);
 
   const activeStore = stores.find(s => s.id === activeStoreId);
   
@@ -412,29 +416,44 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
   };
 
   const handleImageUploadClick = (projectId: string) => {
-      setUploadingImageId(projectId);
+      pendingUploadIdRef.current = projectId; // Synchronous ref update for handler
+      setUploadingImageId(projectId); // State update for UI loading spinner
       imageInputRef.current?.click();
   };
 
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      const projectId = uploadingImageId;
+      const projectId = pendingUploadIdRef.current;
       
       if (file && projectId && onBatchUpdate) {
           try {
               const url = await api.uploadProjectImage(file, projectId);
               if (url) {
                   onBatchUpdate([projectId], { imageUrl: url });
+                  // Clear error state if it existed
+                  setFailedImages(prev => {
+                      const next = new Set(prev);
+                      next.delete(projectId);
+                      return next;
+                  });
+              } else {
+                  throw new Error("No URL returned. Upload may have failed silently.");
               }
           } catch (error) {
               console.error("Upload failed", error);
-              alert("Failed to upload image.");
+              // Show a more friendly alerting if possible, or just standard alert
+              alert(`Failed to upload image. ${error instanceof Error ? error.message : "Unknown error"}`);
           }
       }
       
       // Reset
       setUploadingImageId(null);
+      pendingUploadIdRef.current = null;
       if (imageInputRef.current) imageInputRef.current.value = '';
+  };
+
+  const handleImageError = (projectId: string) => {
+      setFailedImages(prev => new Set(prev).add(projectId));
   };
 
   return (
@@ -735,6 +754,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                  const isSelected = selectedIds.has(p.id);
                  const mType = p.marketplace || 'etsy';
                  const isUploading = uploadingImageId === p.id;
+                 const hasImageError = failedImages.has(p.id);
+                 
                  let cardBorder = 'border-gray-200 dark:border-white/10 hover:border-blue-200 dark:hover:border-gold-500/30';
                  let cardBg = 'bg-white dark:bg-navy-900';
                  let healthBadge = null;
@@ -760,8 +781,13 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                         
                         {/* Image Section */}
                         <div className="h-40 w-full relative group/image bg-navy-950/50 dark:bg-black/20 border-b border-gray-100 dark:border-white/5 overflow-hidden">
-                            {p.imageUrl ? (
-                                <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                            {p.imageUrl && !hasImageError ? (
+                                <img 
+                                    src={p.imageUrl} 
+                                    alt={p.name} 
+                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                                    onError={() => handleImageError(p.id)}
+                                />
                             ) : (
                                 <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 dark:text-slate-600">
                                     <ImageIcon size={32} className="opacity-50" />
