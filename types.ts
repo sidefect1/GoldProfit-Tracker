@@ -88,6 +88,7 @@ export interface ProjectSettings {
   name: string;
   productType: ProductType;
   marketplace: MarketplaceType; // New required field
+  imageUrl?: string; // New: Project Thumbnail URL
   createdAt: number;
   lastModified: number;
   isArchived?: boolean;

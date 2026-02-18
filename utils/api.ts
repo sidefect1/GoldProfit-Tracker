@@ -162,5 +162,36 @@ export const api = {
     if (!this.isBackendAvailable) throw new Error("Backend unavailable");
     const { error } = await supabase.from('projects').delete().eq('id', projectId);
     if (error) throw error;
+  },
+
+  /**
+   * Upload Project Image to Storage
+   */
+  async uploadProjectImage(file: File, projectId: string): Promise<string | null> {
+    if (!this.isBackendAvailable) return null;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${projectId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('project-images')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Upload Error:', uploadError);
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('project-images')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (e) {
+      console.error("Failed to upload image", e);
+      return null;
+    }
   }
 };

@@ -1,10 +1,11 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ProjectSettings, ProductType, ExportPayload, MarketplaceType, Store } from '../types';
-import { Plus, Search, Calendar, MoreVertical, Edit2, Check, X, Filter, ArrowUpDown, ShieldCheck, Archive, Trash2, Copy, Eye, FolderOpen, RefreshCw, RefreshCcw, Download, Upload, CheckSquare, Square, DollarSign, TrendingDown, Activity, AlertTriangle, AlertCircle, ChevronDown, Coins, Tag, Globe, Settings2, Info, Percent, Store as StoreIcon, Building2, ShoppingBag, ListFilter, Settings, UserCircle2, Clock, MinusSquare } from 'lucide-react';
+import { Plus, Search, Calendar, MoreVertical, Edit2, Check, X, Filter, ArrowUpDown, ShieldCheck, Archive, Trash2, Copy, Eye, FolderOpen, RefreshCw, RefreshCcw, Download, Upload, CheckSquare, Square, DollarSign, TrendingDown, Activity, AlertTriangle, AlertCircle, ChevronDown, Coins, Tag, Globe, Settings2, Info, Percent, Store as StoreIcon, Building2, ShoppingBag, ListFilter, Settings, UserCircle2, Clock, MinusSquare, Image as ImageIcon, Camera, Loader2 } from 'lucide-react';
 import { formatDate, calculateProjectHealth, formatCurrency, formatNumber } from '../utils/calculations';
 import { PRODUCT_STYLES, PRODUCT_CONFIGS, DEFAULT_MARKETPLACE_RATES } from '../constants';
 import { CURRENT_SCHEMA_VERSION } from '../utils/migrations';
+import { api } from '../utils/api';
 
 // ... (Existing Icon Components and Helpers like ModernRing, getProductIcon etc. remain unchanged) ...
 const ModernRing = ({ className }: { className?: string }) => (
@@ -184,12 +185,14 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
   const [tempName, setTempName] = useState('');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [storeFocusIdx, setStoreFocusIdx] = useState(-1);
+  const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
 
   const marketplaceTriggerRef = useRef<HTMLDivElement>(null);
   const storeTriggerRef = useRef<HTMLDivElement>(null);
   const storePopoverRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const activeStore = stores.find(s => s.id === activeStoreId);
   
@@ -408,10 +411,37 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
       return colors[Math.abs(hash) % colors.length];
   };
 
+  const handleImageUploadClick = (projectId: string) => {
+      setUploadingImageId(projectId);
+      imageInputRef.current?.click();
+  };
+
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      const projectId = uploadingImageId;
+      
+      if (file && projectId && onBatchUpdate) {
+          try {
+              const url = await api.uploadProjectImage(file, projectId);
+              if (url) {
+                  onBatchUpdate([projectId], { imageUrl: url });
+              }
+          } catch (error) {
+              console.error("Upload failed", error);
+              alert("Failed to upload image.");
+          }
+      }
+      
+      // Reset
+      setUploadingImageId(null);
+      if (imageInputRef.current) imageInputRef.current.value = '';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-navy-950 p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleFileChange} />
+        <input type="file" ref={imageInputRef} className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleImageFileChange} />
 
         {/* ... (Header grid, Search, Filter Panel logic same as before) ... */}
         {/* Reusing existing JSX structure for headers/filters */}
@@ -704,6 +734,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                  const style = PRODUCT_STYLES[p.productType];
                  const isSelected = selectedIds.has(p.id);
                  const mType = p.marketplace || 'etsy';
+                 const isUploading = uploadingImageId === p.id;
                  let cardBorder = 'border-gray-200 dark:border-white/10 hover:border-blue-200 dark:hover:border-gold-500/30';
                  let cardBg = 'bg-white dark:bg-navy-900';
                  let healthBadge = null;
@@ -726,16 +757,50 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
 
                  return (
                     <div key={p.id} onClick={() => onOpen(p.id)} className={`${cardBg} rounded-2xl border shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col group relative overflow-hidden ${cardBorder}`}>
-                        <div className={`absolute left-0 top-0 bottom-0 w-10 flex flex-col items-center justify-center z-10 ${mType === 'shopify' ? 'bg-emerald-500' : 'bg-orange-500'}`}>
-                            <div className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-black text-white shadow-sm ring-1 ring-white/20 ${mType === 'shopify' ? 'bg-emerald-700' : 'bg-orange-700'}`}>{mType === 'shopify' ? 'S' : 'E'}</div>
+                        
+                        {/* Image Section */}
+                        <div className="h-40 w-full relative group/image bg-navy-950/50 dark:bg-black/20 border-b border-gray-100 dark:border-white/5 overflow-hidden">
+                            {p.imageUrl ? (
+                                <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                            ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 dark:text-slate-600">
+                                    <ImageIcon size={32} className="opacity-50" />
+                                </div>
+                            )}
+                            
+                            {/* Marketplace Strip Overlay */}
+                            <div className={`absolute left-0 top-0 bottom-0 w-10 flex flex-col items-center justify-center z-20 ${mType === 'shopify' ? 'bg-emerald-500/90 backdrop-blur-sm' : 'bg-orange-500/90 backdrop-blur-sm'}`}>
+                                <div className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-black text-white shadow-sm ring-1 ring-white/20 ${mType === 'shopify' ? 'bg-emerald-700' : 'bg-orange-700'}`}>{mType === 'shopify' ? 'S' : 'E'}</div>
+                            </div>
+
+                            {/* Upload Overlay */}
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); handleImageUploadClick(p.id); }}
+                                disabled={isUploading}
+                                className={`absolute top-3 right-3 z-30 p-2 rounded-lg backdrop-blur-sm border transition-all duration-200 ${isUploading ? 'bg-navy-900/80 border-gold-500 text-gold-500 cursor-wait' : 'bg-navy-900/60 border-white/20 text-slate-300 hover:text-gold-400 hover:border-gold-500/50 hover:bg-navy-900/90 opacity-0 group-hover/image:opacity-100'}`}
+                                title="Upload Photo"
+                            >
+                                {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
+                            </button>
                         </div>
-                        <div className="absolute top-4 right-4 z-20">
-                            <button onClick={(e) => toggleSelect(e, p.id)} className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-600 dark:bg-gold-500 text-white shadow-sm' : 'bg-white dark:bg-navy-700 border-2 border-gray-200 dark:border-white/10 text-transparent hover:border-blue-400 dark:hover:border-gold-400'}`}><Check size={14} strokeWidth={4} /></button>
+
+                        <div className="absolute top-4 right-4 z-20 pointer-events-none">
+                            <button onClick={(e) => { e.stopPropagation(); toggleSelect(e, p.id); }} className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors pointer-events-auto ${isSelected ? 'bg-blue-600 dark:bg-gold-500 text-white shadow-sm' : 'bg-white/90 dark:bg-navy-900/90 backdrop-blur-sm border border-gray-200 dark:border-white/20 text-transparent hover:border-blue-400 dark:hover:border-gold-400'}`}><Check size={14} strokeWidth={4} /></button>
                         </div>
-                        <div className="p-5 pl-14 flex flex-col h-full">
-                            <div className="flex items-start gap-4">
-                                <div className={`w-14 h-14 ${style.colorBg} dark:bg-opacity-20 rounded-2xl flex items-center justify-center ${style.colorText} dark:text-current shadow-sm shrink-0 group-hover:scale-105 transition-transform duration-200`}>{getProductIcon(p.productType, "w-8 h-8")}</div>
-                                <div className="flex-1 min-w-0 pt-1">
+
+                        <div className="p-5 pl-14 flex flex-col h-full -mt-10 relative z-10 pt-2"> 
+                            {/* Adjusted padding/margin to account for image height vs strip visual flow if needed, but actually standard flow works fine with image at top. 
+                                Reverting negative margin to standard flow logic but keeping content clean.
+                            */}
+                        </div>
+                        
+                        {/* Content Body - Refactored Structure */}
+                        <div className="p-4 pl-14 flex flex-col h-full">
+                            <div className="flex items-start gap-3 mb-2">
+                                {/* Small Icon next to text instead of big avatar since we have image now? Or keep avatar for consistent type ID? 
+                                    Let's keep avatar smaller or simpler. 
+                                */}
+                                <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-start">
                                         <div className="flex-1 min-w-0 mr-8" onClick={e => e.stopPropagation()}>
                                             {editingNameId === p.id ? (
@@ -745,16 +810,17 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                                             )}
                                         </div>
                                     </div>
-                                    <div className="flex flex-wrap items-center gap-y-2 gap-x-2 mt-1.5 text-xs">
+                                    <div className="flex flex-wrap items-center gap-y-2 gap-x-2 mt-1 text-xs">
                                         <div className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md ${style.colorBg} dark:bg-opacity-20 ${style.colorText} dark:text-gray-300 bg-opacity-50`}><span className="uppercase tracking-wider text-[10px]">{PRODUCT_CONFIGS[p.productType].label}</span></div>
                                         <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-tight ${mType === 'shopify' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800' : 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-100 dark:border-orange-800'}`}><span className="text-[9px]">{mType === 'shopify' ? 'Shopify' : 'Etsy'}</span></div>
-                                        <span className="text-gray-400 dark:text-slate-500 text-[10px] flex items-center gap-1 ml-auto sm:ml-0"><Calendar size={10} /> {formatDate(p.lastModified)}</span>
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex-1 min-h-[1rem]"></div>
+                            
+                            <div className="flex-1 min-h-[0.5rem]"></div>
+                            
                             {p._health.status !== 'SETUP' && (
-                                <div className="mb-2">
+                                <div className="mb-2 mt-2">
                                     <div className="flex items-center justify-between text-xs mb-1">
                                         <span className="text-gray-500 dark:text-slate-400 font-medium">Est. Avg Profit</span>
                                         <span className={`font-mono font-bold ${p._health.avgProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
