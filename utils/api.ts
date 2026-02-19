@@ -1,6 +1,7 @@
 import { ProjectSettings, Store } from '../types';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
+import imageCompression from 'browser-image-compression';
 
 export const api = {
   isBackendAvailable: false,
@@ -170,15 +171,24 @@ export const api = {
   async uploadProjectImage(file: File, projectId: string): Promise<string> {
     try {
       const BUCKET_NAME = 'product_images'; // EXACT MATCH for bucket name
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${projectId}/${Date.now()}.${fileExt}`;
+      
+      const options = { 
+        maxSizeMB: 0.2, 
+        maxWidthOrHeight: 1000, 
+        useWebWorker: true,
+        fileType: 'image/webp'
+      };
+      const compressedFile = await imageCompression(file, options);
+
+      const fileName = `${projectId}/${crypto.randomUUID()}.webp`;
       const filePath = `${fileName}`;
 
       // 1. Upload to the correct bucket
       const { data, error: uploadError } = await supabase.storage
         .from(BUCKET_NAME)
-        .upload(filePath, file, {
-            cacheControl: '3600',
+        .upload(filePath, compressedFile, {
+            cacheControl: '31536000',
+            contentType: 'image/webp',
             upsert: false
         });
 

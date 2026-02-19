@@ -1,5 +1,5 @@
 {
-  "name": "copy-of-goldprofit-pro-v.1.0.0.2",
+  "name": "güncel-copy-of-goldprofit-pro-v.1.0.0.2",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,10 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
+    "@supabase/supabase-js": "2.39.7",
+    "browser-image-compression": "^2.0.2",
     "lucide-react": "^0.562.0",
-    "@supabase/supabase-js": "2.39.7"
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

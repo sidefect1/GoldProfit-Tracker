@@ -630,7 +630,13 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                             <div className="relative w-1/3 max-w-[240px] border-r border-gray-100 dark:border-white/5 overflow-hidden group/image shrink-0 bg-gray-100 dark:bg-black">
                                 <div className="relative w-full h-full">
                                     {p.imageUrl && !hasImageError ? (
-                                        <div className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover/image:scale-105" style={{ backgroundImage: `url(${p.imageUrl})` }}></div>
+                                        <img 
+                                            src={p.imageUrl} 
+                                            alt={p.name} 
+                                            loading="lazy" 
+                                            decoding="async" 
+                                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover/image:scale-105" 
+                                        />
                                     ) : (
                                         <div className="absolute inset-0 flex items-center justify-center text-gray-300 dark:text-slate-700 bg-gray-50 dark:bg-slate-900"><ImageIcon size={48} className="opacity-20" /></div>
                                     )}
