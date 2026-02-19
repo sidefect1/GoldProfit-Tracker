@@ -1,4 +1,3 @@
-
 import { ProjectSettings, Store } from '../types';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
@@ -166,38 +165,67 @@ export const api = {
 
   /**
    * Upload Project Image to Storage
+   * Returns the public URL string or throws an Error.
    */
-  async uploadProjectImage(file: File, projectId: string): Promise<string | null> {
-    // Attempt upload regardless of isBackendAvailable flag, as that check relies on DB table access
-    // which might differ from Storage permissions.
-
+  async uploadProjectImage(file: File, projectId: string): Promise<string> {
     try {
+      const BUCKET_NAME = 'product_images'; // EXACT MATCH for bucket name
       const fileExt = file.name.split('.').pop();
-      // Ensure unique filename every time to bust cache
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
-      const filePath = `${projectId}/${fileName}`;
+      const fileName = `${projectId}/${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('project-images')
+      // 1. Upload to the correct bucket
+      const { data, error: uploadError } = await supabase.storage
+        .from(BUCKET_NAME)
         .upload(filePath, file, {
             cacheControl: '3600',
             upsert: false
         });
 
       if (uploadError) {
-        console.error('Supabase Upload Error:', uploadError);
-        throw uploadError;
+        console.error("Supabase Upload Error Detailed:", uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('project-images')
-        .getPublicUrl(filePath);
+      if (!data?.path) {
+         throw new Error("Upload appeared successful but returned no path.");
+      }
 
-      console.log("Image uploaded successfully:", publicUrl);
-      return publicUrl;
-    } catch (e) {
-      console.error("Failed to upload image logic:", e);
-      return null;
+      // 2. Get Public URL
+      const { data: publicUrlData } = supabase.storage
+        .from(BUCKET_NAME)
+        .getPublicUrl(data.path); // Use the path returned from upload
+
+      if (!publicUrlData || !publicUrlData.publicUrl) {
+          throw new Error("Could not generate public URL.");
+      }
+
+      console.log("Image uploaded successfully:", publicUrlData.publicUrl);
+      return publicUrlData.publicUrl;
+
+    } catch (error) {
+      console.error("Catch Block Error:", error);
+      throw error;
     }
+  },
+
+  /**
+   * Fetch live gold price (Mock implementation for demo purposes)
+   */
+  async getLiveGoldPrice(): Promise<{ price: number; error?: string }> {
+      try {
+          // Simulate network request
+          await new Promise(resolve => setTimeout(resolve, 600));
+          
+          // Return a mock live price (e.g. slight variance from 85)
+          const basePrice = 85.00;
+          const variance = (Math.random() * 2) - 1; // +/- 1 dollar
+          const livePrice = parseFloat((basePrice + variance).toFixed(2));
+          
+          return { price: livePrice };
+      } catch (e: any) {
+          console.error("Failed to fetch live gold price", e);
+          return { price: 0, error: e.message || "Unknown error" };
+      }
   }
 };

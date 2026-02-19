@@ -1,62 +1,12 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ProjectSettings, ProductType, ExportPayload, MarketplaceType, Store } from '../types';
-import { Plus, Search, Calendar, MoreVertical, Edit2, Check, X, Filter, ArrowUpDown, ShieldCheck, Archive, Trash2, Copy, Eye, FolderOpen, RefreshCw, RefreshCcw, Download, Upload, CheckSquare, Square, DollarSign, TrendingDown, Activity, AlertTriangle, AlertCircle, ChevronDown, Coins, Tag, Globe, Settings2, Info, Percent, Store as StoreIcon, Building2, ShoppingBag, ListFilter, Settings, UserCircle2, Clock, MinusSquare, Image as ImageIcon, Camera, Loader2 } from 'lucide-react';
-import { formatDate, calculateProjectHealth, formatCurrency, formatNumber } from '../utils/calculations';
+import { ProjectSettings, ProductType, ExportPayload, Store } from '../types';
+import { Plus, Search, Check, X, Filter, ArrowUpDown, Archive, Trash2, Copy, Eye, FolderOpen, RefreshCw, Download, Upload, CheckSquare, Square, TrendingDown, Activity, AlertCircle, ChevronDown, Coins, Building2, ListFilter, Settings, UserCircle2, Clock, MinusSquare, Image as ImageIcon, Camera, Loader2, BookOpen, MoreVertical, Edit2, CheckCircle, Radio, Layers, LogOut, Sun, Moon } from 'lucide-react';
+import { calculateProjectHealth, formatCurrency, formatNumber } from '../utils/calculations';
 import { PRODUCT_STYLES, PRODUCT_CONFIGS, DEFAULT_MARKETPLACE_RATES } from '../constants';
 import { CURRENT_SCHEMA_VERSION } from '../utils/migrations';
 import { api } from '../utils/api';
-
-// ... (Existing Icon Components and Helpers like ModernRing, getProductIcon etc. remain unchanged) ...
-const ModernRing = ({ className }: { className?: string }) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <path d="M12 3L14.5 6H9.5L12 3Z" fill="currentColor" fillOpacity="0.2" />
-        <path d="M9.5 6L12 9L14.5 6" />
-        <circle cx="12" cy="14" r="7" />
-        <path d="M12 11C14 11 15.5 12.5 15.5 14" strokeOpacity="0.5" />
-        <path d="M9 12C9 12 10 11 12 11" strokeOpacity="0.5" />
-    </svg>
-);
-
-const ModernNecklace = ({ className }: { className?: string }) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <path d="M6 4C6 4 6 14 12 14C18 14 18 4 18 4" />
-        <path d="M12 14L10 17L12 20L14 17L12 14Z" fill="currentColor" fillOpacity="0.2" />
-        <path d="M12 15L13 17" strokeOpacity="0.5" />
-    </svg>
-);
-
-const ModernBracelet = ({ className }: { className?: string }) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <ellipse cx="12" cy="12" rx="8" ry="6" />
-        <circle cx="12" cy="18" r="1.5" fill="currentColor" fillOpacity="0.2" />
-        <circle cx="6" cy="14" r="1" />
-        <circle cx="18" cy="14" r="1" />
-        <circle cx="8" cy="7.5" r="1" />
-        <circle cx="16" cy="7.5" r="1" />
-        <path d="M14 6.5C16 7 18 9 18 12" strokeOpacity="0.3" />
-    </svg>
-);
-
-const ModernEarring = ({ className }: { className?: string }) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <circle cx="12" cy="14" r="5" />
-        <circle cx="12" cy="14" r="2.5" fill="currentColor" fillOpacity="0.2" />
-        <path d="M12 9V4" />
-        <path d="M10 4H14" />
-        <path d="M14 12L15 13" strokeOpacity="0.5" />
-    </svg>
-);
-
-const getProductIcon = (type: ProductType, className: string) => {
-    switch(type) {
-        case 'NECKLACE': return <ModernNecklace className={className} />;
-        case 'BRACELET': return <ModernBracelet className={className} />;
-        case 'EARRING': return <ModernEarring className={className} />;
-        case 'RING': 
-        default: return <ModernRing className={className} />;
-    }
-}
+import { Theme, getInitialTheme, applyTheme } from '../utils/theme';
 
 const ActionMenu = ({ 
   isOpen, 
@@ -95,6 +45,7 @@ const ActionMenu = ({
       <button onClick={() => onAction('open')} className={itemClass}><Eye size={16} className="text-gray-400 dark:text-slate-500" /> Open</button>
       <button onClick={() => onAction('duplicate')} className={itemClass}><Copy size={16} className="text-gray-400 dark:text-slate-500" /> Duplicate</button>
       <button onClick={() => onAction('edit')} className={itemClass}><Edit2 size={16} className="text-gray-400 dark:text-slate-500" /> Edit Variations</button>
+      <button onClick={() => onAction('upload_image')} className={itemClass}><Camera size={16} className="text-gray-400 dark:text-slate-500" /> Change Photo</button>
       <button onClick={() => onAction('archive')} className={itemClass}>
         {isArchived ? <RefreshCw size={16} className="text-green-500" /> : <Archive size={16} className="text-gray-400 dark:text-slate-500" />}
         {isArchived ? 'Set Active' : 'Archive'}
@@ -120,19 +71,6 @@ const ToggleSwitch = ({ checked, onChange }: { checked: boolean; onChange: (v: b
     </button>
 );
 
-const FilterChip = ({ label, value, current, onClick }: { label: string, value: string, current: string, onClick: (v:string) => void }) => (
-    <button 
-      onClick={() => onClick(value)}
-      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap border ${
-          current === value 
-          ? 'bg-gray-900 dark:bg-gold-500 text-white shadow-md border-gray-900 dark:border-gold-500' 
-          : 'bg-white dark:bg-navy-900 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-navy-800 hover:border-gray-300 dark:hover:border-white/20'
-      }`}
-    >
-        {label}
-    </button>
-);
-
 const ActiveFilterTag = ({ label, onClear }: { label: string, onClear: () => void }) => (
     <div className="flex items-center gap-1 bg-white dark:bg-navy-800 text-blue-900 dark:text-blue-100 px-2.5 py-1 rounded-full text-[10px] font-bold border border-blue-100 dark:border-blue-800 shadow-sm animate-in fade-in zoom-in-95">
         <span>{label}</span>
@@ -142,7 +80,6 @@ const ActiveFilterTag = ({ label, onClear }: { label: string, onClear: () => voi
     </div>
 );
 
-// ... (Existing ProjectListProps) ...
 interface ProjectListProps {
   projects: ProjectSettings[];
   stores: Store[];
@@ -162,14 +99,13 @@ interface ProjectListProps {
   globalGoldPrice: number; 
   onUpdateGlobalGold: (val: number) => void;
   onBatchUpdate?: (ids: string[], updates: Partial<ProjectSettings>) => void;
+  onLogout: () => void;
 }
 
-export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, activeStoreId, onSelectStore, onCreateStore, onDeleteStore, onOpen, onDelete, onDuplicate, onEdit, onRename, onArchive, onNew, onGlobalSettings, onImport, globalGoldPrice, onUpdateGlobalGold, onBatchUpdate }) => {
-  // ... (State hooks same as before) ...
+export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, activeStoreId, onSelectStore, onCreateStore, onDeleteStore, onOpen, onDelete, onDuplicate, onEdit, onRename, onArchive, onNew, onGlobalSettings, onImport, globalGoldPrice, onUpdateGlobalGold, onBatchUpdate, onLogout }) => {
   const [filterType, setFilterType] = useState<'ALL' | ProductType>('ALL');
   const [marketplaceFilter, setMarketplaceFilter] = useState<{ etsy: boolean; shopify: boolean }>({ etsy: false, shopify: false });
   const [isMarketplacePopoverOpen, setIsMarketplacePopoverOpen] = useState(false);
-  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
   const [healthFilter, setHealthFilter] = useState<'ALL' | 'LOSS' | 'OK' | 'SETUP'>('ALL');
@@ -181,12 +117,17 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
   const [isGoldModalOpen, setIsGoldModalOpen] = useState(false);
   const [modalGoldPrice, setModalGoldPrice] = useState(globalGoldPrice.toString());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [editingNameId, setEditingNameId] = useState<string | null>(null);
-  const [tempName, setTempName] = useState('');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [storeFocusIdx, setStoreFocusIdx] = useState(-1);
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  
+  // Theme State
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+
+  // LIVE GOLD STATE
+  const [liveGoldPrice, setLiveGoldPrice] = useState<number | null>(null);
+  const [isFetchingGold, setIsFetchingGold] = useState(false);
 
   const marketplaceTriggerRef = useRef<HTMLDivElement>(null);
   const storeTriggerRef = useRef<HTMLDivElement>(null);
@@ -195,12 +136,32 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
   const searchInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   
-  // Use a Ref to track the pending upload ID to avoid closure staleness issues in event handlers
   const pendingUploadIdRef = useRef<string | null>(null);
 
   const activeStore = stores.find(s => s.id === activeStoreId);
   
-  // ... (Computed values & Effects same as before) ...
+  // Apply Theme on Mount/Change
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  };
+
+  // FETCH LIVE GOLD ON MOUNT
+  useEffect(() => {
+      const fetchGold = async () => {
+          setIsFetchingGold(true);
+          const data = await api.getLiveGoldPrice();
+          if (!data.error && data.price > 0) {
+              setLiveGoldPrice(data.price);
+          }
+          setIsFetchingGold(false);
+      };
+      fetchGold();
+  }, []);
+
   const storeProjectCounts = useMemo(() => {
       const counts: Record<string, number> = {};
       projects.forEach(p => { if (p.storeId) counts[p.storeId] = (counts[p.storeId] || 0) + 1; });
@@ -249,7 +210,6 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
     setModalGoldPrice(globalGoldPrice.toString());
   }, [globalGoldPrice]);
 
-  // ... (Handlers same as before) ...
   const handleStoreKeyDown = (e: React.KeyboardEvent) => {
       if (e.key === 'ArrowDown') {
           e.preventDefault();
@@ -284,7 +244,6 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
       setFilterType('ALL');
       setSearchQuery('');
       setMarketplaceFilter({ etsy: false, shopify: false });
-      setIsFilterPanelOpen(false);
   };
 
   const filteredAndSortedProjects = useMemo(() => {
@@ -340,10 +299,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
       
       const newSet = new Set(selectedIds);
       if (allSelected) {
-          // Deselect visible
           visibleIds.forEach(id => newSet.delete(id));
       } else {
-          // Select all visible
           visibleIds.forEach(id => newSet.add(id));
       }
       setSelectedIds(newSet);
@@ -385,24 +342,13 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
       reader.readAsText(file);
   };
 
-  const startRenaming = (e: React.MouseEvent, project: ProjectSettings) => {
-      e.stopPropagation();
-      setEditingNameId(project.id);
-      setTempName(project.name);
-  };
-
-  const saveRenaming = (e: React.SyntheticEvent, id: string) => {
-      e.stopPropagation();
-      if (tempName.trim()) onRename(id, tempName);
-      setEditingNameId(null);
-  };
-
   const handleMenuAction = (action: string, project: ProjectSettings) => {
       setOpenMenuId(null);
       switch(action) {
           case 'open': onOpen(project.id); break;
           case 'duplicate': onDuplicate(project.id); break;
           case 'edit': onEdit(project); break;
+          case 'upload_image': handleImageUploadClick(project.id); break;
           case 'archive': onArchive(project.id, !project.isArchived); break;
           case 'delete': onDelete(project.id); break;
       }
@@ -416,8 +362,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
   };
 
   const handleImageUploadClick = (projectId: string) => {
-      pendingUploadIdRef.current = projectId; // Synchronous ref update for handler
-      setUploadingImageId(projectId); // State update for UI loading spinner
+      pendingUploadIdRef.current = projectId; 
+      setUploadingImageId(projectId); 
       imageInputRef.current?.click();
   };
 
@@ -428,25 +374,18 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
       if (file && projectId && onBatchUpdate) {
           try {
               const url = await api.uploadProjectImage(file, projectId);
-              if (url) {
-                  onBatchUpdate([projectId], { imageUrl: url });
-                  // Clear error state if it existed
-                  setFailedImages(prev => {
-                      const next = new Set(prev);
-                      next.delete(projectId);
-                      return next;
-                  });
-              } else {
-                  throw new Error("No URL returned. Upload may have failed silently.");
-              }
-          } catch (error) {
+              onBatchUpdate([projectId], { imageUrl: url });
+              setFailedImages(prev => {
+                  const next = new Set(prev);
+                  next.delete(projectId);
+                  return next;
+              });
+          } catch (error: any) {
               console.error("Upload failed", error);
-              // Show a more friendly alerting if possible, or just standard alert
-              alert(`Failed to upload image. ${error instanceof Error ? error.message : "Unknown error"}`);
+              alert(`Upload failed: ${error.message}`);
           }
       }
       
-      // Reset
       setUploadingImageId(null);
       pendingUploadIdRef.current = null;
       if (imageInputRef.current) imageInputRef.current.value = '';
@@ -456,275 +395,169 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
       setFailedImages(prev => new Set(prev).add(projectId));
   };
 
+  const displayPrice = liveGoldPrice || globalGoldPrice;
+  const isUsingLivePrice = !!liveGoldPrice;
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-navy-950 p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300">
-      <div className="max-w-7xl mx-auto">
-        <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleFileChange} />
-        <input type="file" ref={imageInputRef} className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleImageFileChange} />
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0f111a] font-sans transition-colors duration-300">
+      <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleFileChange} />
+      <input type="file" ref={imageInputRef} className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleImageFileChange} />
 
-        {/* ... (Header grid, Search, Filter Panel logic same as before) ... */}
-        {/* Reusing existing JSX structure for headers/filters */}
-        <div className="flex flex-col gap-4 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                {/* Mobile Top Row */}
-                <div className="flex md:hidden justify-between items-center col-span-1 order-1">
-                    <div className="flex items-center bg-white dark:bg-navy-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm p-1">
-                        <button onClick={() => setIsStorePopoverOpen(true)} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-navy-800 transition-colors">
-                            <Building2 size={16} className="text-gray-400 dark:text-slate-500" />
-                            <span className="text-xs font-bold text-gray-800 dark:text-slate-200 max-w-[80px] truncate">{activeStore?.name || 'Store'}</span>
-                        </button>
-                        <div className="w-px h-5 bg-gray-200 dark:bg-white/10 mx-1"></div>
-                        <button onClick={() => setIsGoldModalOpen(true)} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-navy-800 transition-colors">
-                            <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-amber-600 dark:text-amber-400"><Coins size={12} /></div>
-                            <span className="text-xs font-black text-gray-800 dark:text-slate-200">${formatNumber(globalGoldPrice, 0)}</span>
-                        </button>
-                    </div>
-                    <button onClick={onNew} className="bg-blue-600 dark:bg-gold-500 text-white p-2.5 rounded-xl shadow-lg hover:bg-blue-700 dark:hover:bg-gold-600 transition-colors">
-                        <Plus size={20} />
-                    </button>
-                </div>
+      {/* FULL WIDTH HEADER */}
+      <div className="bg-white dark:bg-[#1e2330] border-b border-gray-200 dark:border-white/5 px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-md transition-colors duration-300">
+          <div className="flex items-center gap-6 w-full">
+              
+              {/* 1. Left: Isolated Gold Widget */}
+              <div className="flex items-center gap-3 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2 shadow-sm shrink-0 transition-colors">
+                  <div className="bg-amber-100 dark:bg-amber-700/40 p-2 rounded-lg text-amber-600 dark:text-amber-500">
+                      <Layers size={20} fill="currentColor" />
+                  </div>
+                  <div className="flex flex-col leading-none">
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">Live Gold Price</span>
+                      <div className="flex items-center gap-2">
+                          <span className={`text-xl font-bold text-gray-900 dark:text-white ${isFetchingGold ? 'animate-pulse' : ''}`}>
+                              ${formatNumber(displayPrice, 2)}
+                          </span>
+                          {/* Live Indicator Mock */}
+                          {isUsingLivePrice && (
+                              <span className="flex items-center text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                                  ▲ Live
+                              </span>
+                          )}
+                      </div>
+                  </div>
+              </div>
 
-                {/* Search */}
-                <div className="col-span-1 md:col-span-7 xl:col-span-6 order-2 md:order-1 flex gap-2 w-full">
-                    <div className="relative flex-1">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
-                        <input 
-                            className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white dark:bg-navy-950 border border-gray-200 dark:border-white/20 focus:ring-2 focus:ring-blue-100 dark:focus:ring-gold-500/20 focus:border-blue-400 dark:focus:border-gold-500 outline-none text-sm font-medium text-gray-700 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 shadow-sm transition-colors"
-                            placeholder="Search projects..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-                    <div className="relative" ref={marketplaceTriggerRef}>
+              {/* 2. Center & Right: Action Controls */}
+              <div className="flex-1 flex items-center gap-4 ml-auto">
+                  
+                  {/* Search Bar - Expanded */}
+                  <div className="relative group flex-1 max-w-md">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={16} />
+                      <input 
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full bg-gray-100 dark:bg-[#151922] border border-gray-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-sm rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-amber-500/50 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                          placeholder="Search projects..."
+                      />
+                  </div>
+
+                  {/* Marketplace Dropdown */}
+                  <div className="relative shrink-0" ref={marketplaceTriggerRef}>
                         <button
                             onClick={() => setIsMarketplacePopoverOpen(!isMarketplacePopoverOpen)}
-                            className={`h-full px-3 md:px-4 rounded-xl text-xs font-bold transition-all border flex items-center gap-2 ${
+                            className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border whitespace-nowrap ${
                                 marketplaceFilter.etsy || marketplaceFilter.shopify
-                                ? 'bg-white dark:bg-navy-900 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-300 shadow-sm ring-1 ring-blue-100 dark:ring-blue-900'
-                                : 'bg-white dark:bg-navy-900 border-gray-200 dark:border-white/10 text-gray-600 dark:text-slate-300 hover:border-gray-300 dark:hover:border-white/20'
+                                ? 'bg-white dark:bg-[#1e2330] border-amber-500/50 text-amber-600 dark:text-amber-400 shadow-sm'
+                                : 'bg-transparent border-gray-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/5'
                             }`}
                         >
-                            <span className="hidden md:inline">
+                            <span>
                                 {marketplaceFilter.etsy && marketplaceFilter.shopify ? 'All Markets' : (marketplaceFilter.etsy ? 'Etsy Only' : (marketplaceFilter.shopify ? 'Shopify Only' : 'Marketplace'))}
                             </span>
-                            <span className="md:hidden">Mkt</span>
                             <ChevronDown size={14} className="opacity-50" />
                         </button>
                         {isMarketplacePopoverOpen && (
-                            <div className="absolute top-full mt-2 left-0 w-48 bg-white dark:bg-navy-900 rounded-xl shadow-xl border border-gray-100 dark:border-white/10 p-3 z-50 animate-in fade-in zoom-in-95 duration-100">
-                                <h4 className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">Filter by Marketplace</h4>
+                            <div className="absolute top-full mt-2 left-0 w-48 bg-white dark:bg-[#1e2330] rounded-xl shadow-xl border border-gray-100 dark:border-white/10 p-3 z-50 animate-in fade-in zoom-in-95 duration-100">
+                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Filter by Marketplace</h4>
                                 <div className="space-y-1">
-                                    <button onClick={() => setMarketplaceFilter(p => ({...p, etsy: !p.etsy}))} className="flex items-center w-full gap-3 p-2 hover:bg-gray-50 dark:hover:bg-navy-800 rounded-lg text-sm text-gray-700 dark:text-slate-200"><div className={`w-4 h-4 rounded border flex items-center justify-center ${marketplaceFilter.etsy ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-300 dark:border-white/20 bg-white dark:bg-navy-950'}`}>{marketplaceFilter.etsy && <Check size={10} strokeWidth={4} />}</div> Etsy</button>
-                                    <button onClick={() => setMarketplaceFilter(p => ({...p, shopify: !p.shopify}))} className="flex items-center w-full gap-3 p-2 hover:bg-gray-50 dark:hover:bg-navy-800 rounded-lg text-sm text-gray-700 dark:text-slate-200"><div className={`w-4 h-4 rounded border flex items-center justify-center ${marketplaceFilter.shopify ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 dark:border-white/20 bg-white dark:bg-navy-950'}`}>{marketplaceFilter.shopify && <Check size={10} strokeWidth={4} />}</div> Shopify</button>
+                                    <button onClick={() => setMarketplaceFilter(p => ({...p, etsy: !p.etsy}))} className="flex items-center w-full gap-3 p-2 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg text-sm text-slate-700 dark:text-slate-200"><div className={`w-4 h-4 rounded border flex items-center justify-center ${marketplaceFilter.etsy ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-300 dark:border-white/20 bg-transparent'}`}>{marketplaceFilter.etsy && <Check size={10} strokeWidth={4} />}</div> Etsy</button>
+                                    <button onClick={() => setMarketplaceFilter(p => ({...p, shopify: !p.shopify}))} className="flex items-center w-full gap-3 p-2 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg text-sm text-slate-700 dark:text-slate-200"><div className={`w-4 h-4 rounded border flex items-center justify-center ${marketplaceFilter.shopify ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 dark:border-white/20 bg-transparent'}`}>{marketplaceFilter.shopify && <Check size={10} strokeWidth={4} />}</div> Shopify</button>
                                 </div>
                             </div>
                         )}
-                    </div>
-                    <button 
-                        onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
-                        className={`h-full min-h-[42px] aspect-square md:aspect-auto md:px-6 rounded-full border flex items-center justify-center gap-2 transition-all duration-200 ${isFilterPanelOpen || activeTechFilterCount > 0 ? 'bg-gray-900 dark:bg-gold-500 text-white border-gray-900 dark:border-gold-500 shadow-md' : 'bg-white dark:bg-navy-900 border-gray-200 dark:border-white/10 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-navy-800 hover:border-gray-300 dark:hover:border-white/20'}`}
-                    >
-                        <ListFilter size={18} strokeWidth={2.5} />
-                        <span className="hidden md:inline text-sm font-semibold">Filters</span>
-                        {activeTechFilterCount > 0 && (
-                            <span className={`flex items-center justify-center h-5 min-w-[20px] px-1.5 text-[10px] font-bold rounded-full ${isFilterPanelOpen ? 'bg-white text-gray-900' : 'bg-red-500 text-white'}`}>
-                                {activeTechFilterCount}
-                            </span>
-                        )}
-                    </button>
-                </div>
+                  </div>
 
-                {/* Context Zone (Desktop) - SAME AS BEFORE */}
-                <div className="hidden md:flex col-span-5 xl:col-span-6 order-3 justify-end items-center gap-3">
-                    <button 
+                  {/* Global Settings */}
+                  <button 
                         onClick={onGlobalSettings}
-                        className="rounded-xl px-3 py-2 text-sm font-semibold transition-colors duration-200 border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-navy-700 text-gray-700 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-navy-600 flex items-center gap-2"
+                        className="flex items-center gap-2 bg-transparent border border-gray-200 dark:border-white/10 text-slate-600 dark:text-slate-300 px-3 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-sm font-medium whitespace-nowrap shrink-0"
                     >
-                        <Settings size={16} />
-                        <span>Global Settings</span>
-                    </button>
+                        <Settings size={18} />
+                        <span className="hidden xl:inline">Global Settings</span>
+                  </button>
 
-                    <div className="flex items-center bg-white dark:bg-navy-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm p-1 h-11">
-                        <div className="relative" ref={storeTriggerRef}>
-                            <button
-                                onClick={() => setIsStorePopoverOpen(!isStorePopoverOpen)}
-                                className="group hover:bg-gray-50 dark:hover:bg-navy-800 rounded-lg px-2 py-1.5 flex items-center transition-colors h-full"
-                                title={activeStore ? `Active Store: ${activeStore.name}` : 'Select Store'}
-                            >
-                                <div className="flex items-center gap-2 max-w-[140px]">
-                                    <div className="p-1 rounded-md text-gray-400 group-hover:text-blue-500 dark:group-hover:text-gold-400 transition-colors">
-                                        <Building2 size={18} />
-                                    </div>
-                                    <span className="truncate text-sm font-bold text-gray-700 dark:text-slate-200 leading-tight">
-                                        {activeStore?.name || 'Select Store'}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2 pl-3 ml-2 border-l border-gray-200 dark:border-white/10 h-6">
-                                    <span className="bg-gray-100 dark:bg-navy-700 text-gray-500 dark:text-slate-300 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                        {storeProjectCounts[activeStoreId || ''] || 0}
-                                    </span>
-                                    <ChevronDown size={14} className="text-gray-400 dark:text-slate-500" />
-                                </div>
-                            </button>
-                            {/* Store Popover Logic (Same as existing) */}
-                            {isStorePopoverOpen && (
-                                <div 
-                                    ref={storePopoverRef} 
-                                    className="fixed inset-x-0 bottom-0 z-[100] md:absolute md:inset-auto md:top-full md:right-0 md:mt-2 w-full md:w-96 bg-white dark:bg-navy-900 md:rounded-2xl rounded-t-2xl shadow-2xl border border-gray-200 dark:border-white/10 overflow-hidden flex flex-col max-h-[80vh] md:max-h-[500px] animate-in slide-in-from-bottom-10 md:slide-in-from-top-2 md:fade-in origin-top-right"
-                                >
-                                     {/* ... Store Popover Content ... */}
-                                     {/* (Abbreviated for brevity, logic identical to previous implementation) */}
-                                     <div className="px-4 py-3 border-b border-gray-100 dark:border-white/10 shrink-0">
-                                         <div className="relative">
-                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
-                                            <input 
-                                                ref={searchInputRef}
-                                                className="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-navy-950 border border-transparent dark:border-white/10 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:bg-white dark:focus:bg-navy-900 focus:border-blue-300 dark:focus:border-gold-500 focus:ring-4 focus:ring-blue-50 dark:focus:ring-gold-500/10 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
-                                                placeholder="Search store..."
-                                                value={storeSearch}
-                                                onChange={(e) => setStoreSearch(e.target.value)}
-                                                onKeyDown={handleStoreKeyDown}
-                                            />
-                                        </div>
-                                     </div>
-                                     <div className="overflow-y-auto scrollbar-thin p-2 space-y-1 min-h-[150px]">
-                                        {filteredStores.map((store, idx) => (
-                                            <button
-                                                key={store.id}
-                                                onClick={() => { onSelectStore(store.id); setIsStorePopoverOpen(false); }}
-                                                className={`w-full flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all text-left group border ${store.id === activeStoreId ? 'bg-blue-50 dark:bg-navy-800 border-blue-200 dark:border-blue-900 shadow-sm' : (idx === storeFocusIdx ? 'bg-gray-50 dark:bg-navy-800 border-gray-200 dark:border-white/10' : 'bg-white dark:bg-navy-900 border-transparent hover:bg-gray-50 dark:hover:bg-navy-800 hover:border-gray-100 dark:hover:border-white/10')}`}
-                                            >
-                                                <div className="flex items-center gap-3 min-w-0">
-                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm shrink-0 ${getAvatarColor(store.name)}`}>
-                                                        {store.name.substring(0,2).toUpperCase()}
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <div className={`text-sm font-bold truncate ${store.id === activeStoreId ? 'text-blue-900 dark:text-blue-200' : 'text-gray-800 dark:text-slate-200'}`}>{store.name}</div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    {store.id === activeStoreId && <Check size={14} className="text-blue-600 dark:text-blue-400" />}
-                                                    {onDeleteStore && <div role="button" onClick={(e) => { e.stopPropagation(); onDeleteStore(store.id); }} className="p-1.5 text-gray-300 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"><Trash2 size={14} /></div>}
-                                                </div>
-                                            </button>
-                                        ))}
-                                     </div>
-                                     <div className="p-3 border-t border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-navy-800/50 shrink-0 sticky bottom-0">
-                                        <button onClick={() => { onCreateStore(); setIsStorePopoverOpen(false); }} className="w-full py-3 rounded-xl bg-gray-900 dark:bg-gold-500 text-white font-bold text-xs hover:bg-black dark:hover:bg-gold-600 shadow-lg shadow-gray-200 dark:shadow-none transition-all flex items-center justify-center gap-2">
-                                            <Plus size={16} /> Create New Store
-                                        </button>
-                                     </div>
+                  <div className="h-8 w-px bg-gray-200 dark:bg-white/10 mx-1 shrink-0"></div>
+
+                  {/* Store Selector */}
+                  <div className="relative shrink-0" ref={storeTriggerRef}>
+                      <button onClick={() => setIsStorePopoverOpen(!isStorePopoverOpen)} className="flex items-center gap-2 bg-slate-800 dark:bg-[#2a3143] border border-slate-700 dark:border-white/10 text-white px-3 py-2.5 rounded-lg text-sm font-bold hover:border-amber-500/30 transition-all whitespace-nowrap">
+                          <Building2 size={16} className="text-slate-300" />
+                          <span>{activeStore?.name || 'Select Store'}</span>
+                          <ChevronDown size={14} className="text-slate-400" />
+                      </button>
+                      {isStorePopoverOpen && (
+                                <div ref={storePopoverRef} className="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-[#1e2330] rounded-xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden flex flex-col z-[60] animate-in fade-in zoom-in-95 origin-top-right">
+                                     <div className="px-4 py-3 border-b border-gray-100 dark:border-white/10 shrink-0"><div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" /><input ref={searchInputRef} className="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-[#151922] border border-gray-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-800 dark:text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500" placeholder="Search store..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} onKeyDown={handleStoreKeyDown} /></div></div>
+                                     <div className="overflow-y-auto scrollbar-thin p-2 space-y-1 max-h-[200px]">{filteredStores.map((store, idx) => (<button key={store.id} onClick={() => { onSelectStore(store.id); setIsStorePopoverOpen(false); }} className={`w-full flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all text-left group border ${store.id === activeStoreId ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 shadow-sm' : (idx === storeFocusIdx ? 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10' : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-white/5 hover:border-gray-200 dark:hover:border-white/10')}`}><div className="flex items-center gap-3 min-w-0"><div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm shrink-0 ${getAvatarColor(store.name)}`}>{store.name.substring(0,2).toUpperCase()}</div><div className="min-w-0"><div className={`text-sm font-bold truncate ${store.id === activeStoreId ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-200'}`}>{store.name}</div></div></div><div className="flex items-center gap-2">{store.id === activeStoreId && <Check size={14} className="text-amber-600 dark:text-amber-400" />}{onDeleteStore && <div role="button" onClick={(e) => { e.stopPropagation(); onDeleteStore(store.id); }} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md"><Trash2 size={14} /></div>}</div></button>))}</div>
+                                     <div className="p-3 border-t border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-[#151922] shrink-0"><button onClick={() => { onCreateStore(); setIsStorePopoverOpen(false); }} className="w-full py-2.5 rounded-xl bg-amber-500 text-[#1e2330] font-bold text-xs hover:bg-amber-400 shadow-lg transition-all flex items-center justify-center gap-2"><Plus size={16} /> Create New Store</button></div>
                                 </div>
                             )}
-                        </div>
-                        <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-1"></div>
-                        <button onClick={() => setIsGoldModalOpen(true)} className="hover:bg-gray-50 dark:hover:bg-navy-800 rounded-lg px-3 py-2 flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-slate-200 transition-colors group h-full">
-                            <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-amber-600 dark:text-amber-400 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/80 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors"><Coins size={14} /></div>
-                            <div className="flex flex-col items-start leading-none"><span className="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase">Gold</span><span className="font-black">${formatNumber(globalGoldPrice, 0)}</span></div>
-                        </button>
-                    </div>
-                    <button onClick={onNew} className="h-11 px-5 bg-blue-600 dark:bg-gold-500 text-white rounded-xl shadow-lg hover:bg-blue-700 dark:hover:bg-gold-600 transition-all font-bold text-sm flex items-center gap-2 whitespace-nowrap">
-                        <Plus size={18} /> <span className="hidden xl:inline">New Project</span> <span className="xl:hidden">New</span>
-                    </button>
-                </div>
-            </div>
+                  </div>
 
-            {/* Filters Row */}
-            {isFilterPanelOpen && (
-                 <div className="bg-white dark:bg-navy-900 border border-gray-200 dark:border-white/10 rounded-xl p-3 shadow-sm flex flex-col md:flex-row gap-4 items-center animate-in slide-in-from-top-2 fade-in">
-                    {/* ... (Existing Filter Controls) ... */}
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                        <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase w-16 md:w-auto">Status:</span>
-                        <select className="bg-gray-50 dark:bg-navy-950 text-xs font-bold text-gray-700 dark:text-white border border-gray-200 dark:border-white/10 rounded-lg py-1.5 px-2 cursor-pointer hover:border-gray-300 dark:hover:border-white/20 focus:outline-none flex-1 md:flex-none" value={healthFilter} onChange={(e) => setHealthFilter(e.target.value as any)} disabled={showLossesOnly}>
-                            <option value="ALL">Show All</option>
-                            <option value="LOSS">Loss Risks</option>
-                            <option value="OK">Healthy</option>
-                            <option value="SETUP">Needs Setup</option>
-                        </select>
-                    </div>
-                    <div className="hidden md:block w-px h-6 bg-gray-100 dark:bg-white/10"></div>
-                    <div className="flex items-center gap-3 w-full md:w-auto">
-                        <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase w-16 md:w-auto">Only Risks:</span>
-                        <div className="flex items-center gap-2"><ToggleSwitch checked={showLossesOnly} onChange={setShowLossesOnly} /><span className={`text-xs font-bold ${showLossesOnly ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-slate-500'}`}>{showLossesOnly ? 'ON' : 'OFF'}</span></div>
-                    </div>
-                    <div className="hidden md:block w-px h-6 bg-gray-100 dark:bg-white/10"></div>
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                        <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase w-16 md:w-auto">Min Loss:</span>
-                        <div className="relative flex items-center bg-gray-50 dark:bg-navy-950 border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1.5 flex-1 md:flex-none"><span className="text-xs font-bold text-gray-400 mr-1">$</span><input type="number" className="w-16 text-xs font-bold text-gray-900 dark:text-white bg-transparent outline-none placeholder:text-gray-300 dark:placeholder:text-slate-600" placeholder="Any" value={profitThreshold === 0 ? '' : profitThreshold} onChange={(e) => setProfitThreshold(parseFloat(e.target.value) || 0)} /></div>
-                    </div>
-                </div>
-            )}
-            
-            {/* Active Filters & Category Chips ... (Same as before) */}
-            {hasActiveFilters && (
-                <div className="flex flex-wrap items-center gap-2 px-1">
-                    <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mr-1">Active:</span>
-                    {healthFilter !== 'ALL' && <ActiveFilterTag label={`Status: ${healthFilter}`} onClear={() => setHealthFilter('ALL')} />}
-                    {showLossesOnly && <ActiveFilterTag label="Losses Only" onClear={() => setShowLossesOnly(false)} />}
-                    {profitThreshold > 0 && <ActiveFilterTag label={`Min Loss: $${profitThreshold}`} onClear={() => setProfitThreshold(0)} />}
-                    {filterType !== 'ALL' && <ActiveFilterTag label={`Type: ${PRODUCT_CONFIGS[filterType].label}`} onClear={() => setFilterType('ALL')} />}
-                    {searchQuery && <ActiveFilterTag label={`Search: "${searchQuery}"`} onClear={() => setSearchQuery('')} />}
-                    <button onClick={clearAllFilters} className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline ml-2">Clear All</button>
-                </div>
-            )}
+                  {/* Manual Gold Rate Button */}
+                  <button 
+                      onClick={() => setIsGoldModalOpen(true)}
+                      className="flex items-center gap-2 bg-slate-800 dark:bg-[#2a3143] border border-slate-700 dark:border-white/10 text-white px-3 py-2.5 rounded-lg text-sm font-bold hover:border-amber-500/30 transition-all whitespace-nowrap shrink-0"
+                  >
+                      <Coins size={16} className="text-amber-500" />
+                      <span>Gold ${formatNumber(globalGoldPrice, 0)}</span>
+                  </button>
 
-            <div className="flex items-center gap-4 border-t border-gray-100 dark:border-white/10 pt-4 overflow-x-auto no-scrollbar md:overflow-visible">
-                <div className="flex gap-2 min-w-max px-1">
-                    <FilterChip label="All Types" value="ALL" current={filterType} onClick={(v) => setFilterType(v as any)} />
-                    <FilterChip label="Rings" value="RING" current={filterType} onClick={(v) => setFilterType(v as any)} />
-                    <FilterChip label="Necklaces" value="NECKLACE" current={filterType} onClick={(v) => setFilterType(v as any)} />
-                    <FilterChip label="Bracelets" value="BRACELET" current={filterType} onClick={(v) => setFilterType(v as any)} />
-                    <FilterChip label="Piercings" value="EARRING" current={filterType} onClick={(v) => setFilterType(v as any)} />
-                </div>
-                <div className="flex-1"></div>
-                <div className="hidden md:flex items-center gap-2">
-                    <div className="flex items-center bg-white dark:bg-navy-900 rounded-lg p-0.5 border border-gray-200 dark:border-white/10 shadow-sm">
-                        <button onClick={handleSelectAll} className="p-1.5 hover:bg-gray-50 dark:hover:bg-navy-800 rounded-md text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-all" title={isAllSelected ? "Deselect All Visible" : "Select All Visible"}>
-                            {isAllSelected ? <CheckSquare size={14} className="text-blue-600 dark:text-gold-500" /> : (isIndeterminate ? <MinusSquare size={14} className="text-blue-600 dark:text-gold-500" /> : <Square size={14} />)}
-                        </button>
-                        <div className="w-px h-3 bg-gray-200 dark:bg-white/10 mx-0.5"></div>
-                        <button onClick={handleImportClick} className="p-1.5 hover:bg-gray-50 dark:hover:bg-navy-800 rounded-md text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-all" title="Import"><Upload size={14}/></button>
-                        <div className="w-px h-3 bg-gray-200 dark:bg-white/10 mx-0.5"></div>
-                        <button onClick={handleExport} disabled={selectedIds.size === 0} className={`p-1.5 rounded-md transition-all ${selectedIds.size > 0 ? 'hover:bg-gray-50 dark:hover:bg-navy-800 text-blue-600 dark:text-blue-400' : 'text-gray-300 dark:text-slate-600 cursor-not-allowed'}`} title="Export"><Download size={14}/></button>
-                    </div>
-                    <div className="flex items-center gap-2 bg-white dark:bg-navy-900 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 shadow-sm">
-                        <ArrowUpDown size={14} className="text-gray-400 dark:text-slate-500" />
-                        <select className="text-xs font-bold bg-transparent border-none p-0 focus:ring-0 text-gray-600 dark:text-slate-300 cursor-pointer w-28 outline-none dark:bg-navy-900" value={sortType} onChange={(e) => setSortType(e.target.value as any)}>
-                            <option value="DATE_DESC">Newest</option>
-                            <option value="DATE_ASC">Oldest</option>
-                            <option value="NAME_ASC">Name A-Z</option>
-                            <option value="PROFIT_ASC">Lowest Profit</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </div>
+                  {/* Theme Toggle */}
+                  <button
+                    onClick={toggleTheme}
+                    className="p-2 rounded-lg bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 text-slate-600 dark:text-slate-300 transition-colors shrink-0"
+                    title="Toggle Theme"
+                  >
+                    {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                  </button>
 
-        {/* Gold Modal (Same as before) */}
-        {isGoldModalOpen && (
+                  {/* Logout Button */}
+                  <button 
+                      onClick={onLogout}
+                      className="p-2 rounded-lg bg-gray-100 dark:bg-white/5 hover:bg-red-50 dark:hover:bg-red-900/20 border border-gray-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:text-red-500 dark:hover:text-red-400 transition-colors shrink-0"
+                      title="Log Out"
+                  >
+                      <LogOut size={20} />
+                  </button>
+
+                  {/* Primary Action */}
+                  <button 
+                      onClick={onNew}
+                      className="flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 text-[#1e2330] font-bold px-5 py-2.5 rounded-lg shadow-[0_0_15px_rgba(245,158,11,0.4)] hover:shadow-[0_0_20px_rgba(245,158,11,0.6)] hover:scale-[1.02] active:scale-95 transition-all text-sm whitespace-nowrap shrink-0"
+                  >
+                      <Plus size={18} strokeWidth={2.5} />
+                      <span>New Project</span>
+                  </button>
+              </div>
+          </div>
+      </div>
+
+      {/* Gold Modal */}
+      {isGoldModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                 <div className="bg-white dark:bg-navy-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-gray-100 dark:border-white/10">
-                    <div className="bg-gradient-to-b from-orange-400 to-orange-500 dark:from-gold-600 dark:to-gold-700 p-8 text-white text-center">
+                    <div className={`bg-gradient-to-b ${isUsingLivePrice ? 'from-red-500 to-red-600 dark:from-red-600 dark:to-red-700' : 'from-orange-400 to-orange-500 dark:from-gold-600 dark:to-gold-700'} p-8 text-white text-center`}>
                         <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-                            <Coins size={24} className="text-white" />
+                            {isUsingLivePrice ? <Radio size={24} className="animate-pulse" /> : <Coins size={24} />}
                         </div>
                         <h3 className="text-xl font-bold">Store Gold Rate</h3>
-                        <p className="text-orange-100 dark:text-gold-100 text-sm mt-1">Updates calculations for this store.</p>
+                        <p className="text-white/80 text-sm mt-1">{isUsingLivePrice ? 'Viewing LIVE Market Data' : 'Updates calculations for this store.'}</p>
                     </div>
                     <div className="p-8">
+                        {isUsingLivePrice && (
+                            <div className="mb-4 bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300 p-3 rounded-lg text-xs font-medium border border-red-100 dark:border-red-800 flex items-start gap-2">
+                                <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                                <span>
+                                    Displaying live data from Nadir Döviz ({formatNumber(displayPrice, 2)}/g). 
+                                    Click <strong>Update Rate</strong> to apply this as your store standard.
+                                </span>
+                            </div>
+                        )}
                         <div className="mb-6">
                             <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">Price per Gram (24K)</label>
-                            <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">$</span>
-                                <input 
-                                    type="number" 
-                                    className="w-full pl-9 pr-4 py-4 text-2xl font-bold text-gray-900 dark:text-white bg-white dark:bg-navy-950 border border-gray-200 dark:border-white/20 rounded-xl focus:ring-4 focus:ring-orange-100 dark:focus:ring-gold-500/20 focus:border-orange-500 dark:focus:border-gold-500 outline-none transition-all shadow-sm"
-                                    value={modalGoldPrice}
-                                    onChange={(e) => setModalGoldPrice(e.target.value)}
-                                    autoFocus
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSaveGold()}
-                                />
-                            </div>
+                            <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">$</span><input type="number" className="w-full pl-9 pr-4 py-4 text-2xl font-bold text-gray-900 dark:text-white bg-white dark:bg-navy-950 border border-gray-200 dark:border-white/20 rounded-xl focus:ring-4 focus:ring-orange-100 dark:focus:ring-gold-500/20 focus:border-orange-500 dark:focus:border-gold-500 outline-none transition-all shadow-sm" value={modalGoldPrice} onChange={(e) => setModalGoldPrice(e.target.value)} autoFocus onKeyDown={(e) => e.key === 'Enter' && handleSaveGold()} /></div>
                         </div>
                         <div className="flex items-center justify-between gap-4">
                             <button onClick={() => setIsGoldModalOpen(false)} className="text-gray-500 dark:text-slate-400 font-bold hover:text-gray-800 dark:hover:text-slate-200 px-4 transition-colors">Cancel</button>
@@ -733,146 +566,151 @@ export const ProjectList: React.FC<ProjectListProps> = ({ projects, stores, acti
                     </div>
                 </div>
             </div>
+      )}
+
+      <div className="w-full relative p-4 md:p-6 lg:p-8">
+        {/* Active Filters Display */}
+        {hasActiveFilters && (
+            <div className="flex flex-wrap items-center gap-2 px-1 mb-6">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1">Active:</span>
+                {healthFilter !== 'ALL' && <ActiveFilterTag label={`Status: ${healthFilter}`} onClear={() => setHealthFilter('ALL')} />}
+                {showLossesOnly && <ActiveFilterTag label="Losses Only" onClear={() => setShowLossesOnly(false)} />}
+                {profitThreshold > 0 && <ActiveFilterTag label={`Min Loss: $${profitThreshold}`} onClear={() => setProfitThreshold(0)} />}
+                {filterType !== 'ALL' && <ActiveFilterTag label={`Type: ${PRODUCT_CONFIGS[filterType].label}`} onClear={() => setFilterType('ALL')} />}
+                {searchQuery && <ActiveFilterTag label={`Search: "${searchQuery}"`} onClear={() => setSearchQuery('')} />}
+                <button onClick={clearAllFilters} className="text-[10px] font-bold text-amber-500 hover:text-amber-400 underline ml-2">Clear All</button>
+            </div>
         )}
 
         {/* Project Grid */}
         {filteredAndSortedProjects.length === 0 ? (
            <div className="bg-white dark:bg-navy-900 rounded-2xl border border-dashed border-gray-300 dark:border-white/10 p-8 md:p-16 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-50 dark:bg-navy-800 text-gray-400 dark:text-slate-500 rounded-full mb-4">
-                 <FolderOpen size={32} />
-              </div>
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-50 dark:bg-navy-800 text-gray-400 dark:text-slate-500 rounded-full mb-4"><FolderOpen size={32} /></div>
               <h3 className="text-xl font-bold text-gray-800 dark:text-slate-200 mb-2">No projects found</h3>
-              <p className="text-gray-500 dark:text-slate-400 mb-6">
-                  {searchQuery ? 'Try adjusting your search.' : (showLossesOnly ? 'No projects with loss found.' : 'Create a new project to get started.')}
-              </p>
+              <p className="text-gray-500 dark:text-slate-400 mb-6">{searchQuery ? 'Try adjusting your search.' : (showLossesOnly ? 'No projects with loss found.' : 'Create a new project to get started.')}</p>
               <button onClick={onNew} className="text-blue-600 dark:text-gold-400 font-bold hover:underline">Create New Project</button>
            </div>
         ) : (
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredAndSortedProjects.map(p => {
-                 const style = PRODUCT_STYLES[p.productType];
                  const isSelected = selectedIds.has(p.id);
                  const mType = p.marketplace || 'etsy';
                  const isUploading = uploadingImageId === p.id;
                  const hasImageError = failedImages.has(p.id);
                  
-                 let cardBorder = 'border-gray-200 dark:border-white/10 hover:border-blue-200 dark:hover:border-gold-500/30';
-                 let cardBg = 'bg-white dark:bg-navy-900';
-                 let healthBadge = null;
+                 const profit = p._health.avgProfit;
+                 const isProfitable = profit >= 0;
+                 const isSetup = p._health.status === 'SETUP';
 
-                 if (p._health.status === 'LOSS') {
-                     cardBg = 'bg-gradient-to-br from-white via-white to-red-50 dark:from-navy-900 dark:to-red-900/20';
-                     cardBorder = 'border-red-200 dark:border-red-900/50 ring-1 ring-red-50 dark:ring-red-900/20';
-                     healthBadge = (<div className="flex items-center gap-1 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border border-red-200 dark:border-red-800/50"><TrendingDown size={12} /> Loss Risk</div>);
-                 } else if (p._health.status === 'OK') {
-                     cardBg = 'bg-gradient-to-br from-white via-white to-emerald-50 dark:from-navy-900 dark:to-green-900/20';
-                     cardBorder = 'border-green-200 dark:border-green-900/50 ring-1 ring-green-50 dark:ring-green-900/20';
-                     healthBadge = (<div className="flex items-center gap-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border border-green-200 dark:border-green-800/50"><Activity size={12} /> Healthy</div>);
-                 } else {
-                     cardBg = 'bg-gray-50 dark:bg-navy-800';
-                     cardBorder = 'border-gray-200 dark:border-white/5';
-                     healthBadge = (<div className="flex items-center gap-1 bg-gray-200 dark:bg-navy-700 text-gray-600 dark:text-slate-400 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase"><AlertCircle size={12} /> Needs Setup</div>);
-                 }
+                 // Dynamic Hologram Styles
+                 const hologramBg = isProfitable 
+                    ? "bg-gradient-to-r from-emerald-100 dark:from-emerald-900/40 via-emerald-50 dark:via-emerald-600/20 to-transparent dark:to-slate-800/20"
+                    : "bg-gradient-to-r from-rose-100 dark:from-rose-900/40 via-rose-50 dark:via-rose-600/20 to-transparent dark:to-slate-800/20";
+        
+                 const textGlow = isProfitable
+                    ? "text-emerald-600 dark:text-emerald-400 dark:[text-shadow:0_0_10px_rgba(52,211,153,0.6),_0_0_20px_rgba(52,211,153,0.3)]"
+                    : "text-rose-600 dark:text-rose-400 dark:[text-shadow:0_0_10px_rgba(244,63,94,0.6),_0_0_20px_rgba(244,63,94,0.3)]";
+                    
+                 const profitContainerStyle = isProfitable
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/5 border-emerald-200 dark:border-emerald-500/10"
+                    : "border-rose-500 bg-rose-50 dark:bg-rose-500/5 border-rose-200 dark:border-rose-500/10";
 
-                 if (isSelected) { cardBorder = 'ring-2 ring-blue-500 border-blue-500 dark:ring-gold-500 dark:border-gold-500'; cardBg = 'bg-white dark:bg-navy-800'; }
+                 const marginBadgeStyle = isProfitable
+                    ? "bg-emerald-100 dark:bg-emerald-500/20 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 dark:shadow-[0_0_15px_-3px_rgba(16,185,129,0.3)]"
+                    : "bg-rose-100 dark:bg-rose-500/20 border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 dark:shadow-[0_0_15px_-3px_rgba(244,63,94,0.3)]";
 
                  return (
-                    <div key={p.id} onClick={() => onOpen(p.id)} className={`${cardBg} rounded-2xl border shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col group relative overflow-hidden ${cardBorder}`}>
+                    <div key={p.id} className="relative w-full group/card" onClick={() => onOpen(p.id)}>
+                        {/* Outer Glow */}
+                        <div className={`absolute -inset-1 rounded-2xl blur opacity-0 dark:opacity-60 group-hover/card:opacity-40 dark:group-hover/card:opacity-80 transition duration-700 ${!isSetup ? hologramBg : 'bg-gray-200 dark:bg-gray-800/50'}`}></div>
                         
-                        {/* Image Section */}
-                        <div className="h-40 w-full relative group/image bg-navy-950/50 dark:bg-black/20 border-b border-gray-100 dark:border-white/5 overflow-hidden">
-                            {p.imageUrl && !hasImageError ? (
-                                <img 
-                                    src={p.imageUrl} 
-                                    alt={p.name} 
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                                    onError={() => handleImageError(p.id)}
-                                />
-                            ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 dark:text-slate-600">
-                                    <ImageIcon size={32} className="opacity-50" />
-                                </div>
-                            )}
+                        <div className="relative flex bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl dark:shadow-2xl overflow-hidden border border-gray-100 dark:border-white/5 min-h-[300px]">
                             
-                            {/* Marketplace Strip Overlay */}
-                            <div className={`absolute left-0 top-0 bottom-0 w-10 flex flex-col items-center justify-center z-20 ${mType === 'shopify' ? 'bg-emerald-500/90 backdrop-blur-sm' : 'bg-orange-500/90 backdrop-blur-sm'}`}>
-                                <div className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-black text-white shadow-sm ring-1 ring-white/20 ${mType === 'shopify' ? 'bg-emerald-700' : 'bg-orange-700'}`}>{mType === 'shopify' ? 'S' : 'E'}</div>
+                            {/* Left Image Section (1/3 width) */}
+                            <div className="relative w-1/3 max-w-[240px] border-r border-gray-100 dark:border-white/5 overflow-hidden group/image shrink-0 bg-gray-100 dark:bg-black">
+                                <div className="relative w-full h-full">
+                                    {p.imageUrl && !hasImageError ? (
+                                        <div className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover/image:scale-105" style={{ backgroundImage: `url(${p.imageUrl})` }}></div>
+                                    ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center text-gray-300 dark:text-slate-700 bg-gray-50 dark:bg-slate-900"><ImageIcon size={48} className="opacity-20" /></div>
+                                    )}
+                                    {/* Upload button removed from hover overlay, moved to menu */}
+                                </div>
                             </div>
 
-                            {/* Upload Overlay */}
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); handleImageUploadClick(p.id); }}
-                                disabled={isUploading}
-                                className={`absolute top-3 right-3 z-30 p-2 rounded-lg backdrop-blur-sm border transition-all duration-200 ${isUploading ? 'bg-navy-900/80 border-gold-500 text-gold-500 cursor-wait' : 'bg-navy-900/60 border-white/20 text-slate-300 hover:text-gold-400 hover:border-gold-500/50 hover:bg-navy-900/90 opacity-0 group-hover/image:opacity-100'}`}
-                                title="Upload Photo"
-                            >
-                                {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
-                            </button>
-                        </div>
-
-                        <div className="absolute top-4 right-4 z-20 pointer-events-none">
-                            <button onClick={(e) => { e.stopPropagation(); toggleSelect(e, p.id); }} className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors pointer-events-auto ${isSelected ? 'bg-blue-600 dark:bg-gold-500 text-white shadow-sm' : 'bg-white/90 dark:bg-navy-900/90 backdrop-blur-sm border border-gray-200 dark:border-white/20 text-transparent hover:border-blue-400 dark:hover:border-gold-400'}`}><Check size={14} strokeWidth={4} /></button>
-                        </div>
-
-                        <div className="p-5 pl-14 flex flex-col h-full -mt-10 relative z-10 pt-2"> 
-                            {/* Adjusted padding/margin to account for image height vs strip visual flow if needed, but actually standard flow works fine with image at top. 
-                                Reverting negative margin to standard flow logic but keeping content clean.
-                            */}
-                        </div>
-                        
-                        {/* Content Body - Refactored Structure */}
-                        <div className="p-4 pl-14 flex flex-col h-full">
-                            <div className="flex items-start gap-3 mb-2">
-                                {/* Small Icon next to text instead of big avatar since we have image now? Or keep avatar for consistent type ID? 
-                                    Let's keep avatar smaller or simpler. 
-                                */}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex-1 min-w-0 mr-8" onClick={e => e.stopPropagation()}>
-                                            {editingNameId === p.id ? (
-                                                <div className="flex items-center gap-1 w-full relative z-20"><input className="w-full border border-blue-400 rounded-lg px-2 py-1 text-base font-bold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900 outline-none bg-white dark:bg-navy-950 shadow-sm" value={tempName} onChange={e => setTempName(e.target.value)} autoFocus onClick={e => e.stopPropagation()} onKeyDown={e => e.key === 'Enter' && saveRenaming(e, p.id)}/><button onClick={e => saveRenaming(e, p.id)} className="bg-green-100 text-green-700 p-1.5 rounded-md hover:bg-green-200 transition-colors"><Check size={14}/></button><button onClick={(e) => { e.stopPropagation(); setEditingNameId(null); }} className="bg-red-100 text-red-700 p-1.5 rounded-md hover:bg-red-200 transition-colors"><X size={14}/></button></div>
-                                            ) : (
-                                                <div className="group/name flex items-center gap-2"><h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-gold-400 transition-colors truncate">{p.name}</h3><button onClick={(e) => startRenaming(e, p)} className="text-gray-300 dark:text-slate-600 hover:text-blue-500 dark:hover:text-gold-400 opacity-0 group-hover/name:opacity-100 transition-opacity p-1 hidden md:block"><Edit2 size={14} /></button></div>
-                                            )}
+                            {/* Right Content Section */}
+                            <div className="flex-1 flex flex-col p-6 relative">
+                                {/* Header: Select & Tags */}
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="flex gap-2">
+                                        <span className="px-2 py-1 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">{PRODUCT_CONFIGS[p.productType].label}</span>
+                                        <span className={`px-2 py-1 border rounded text-[10px] uppercase font-bold ${mType === 'shopify' ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/20 text-orange-600 dark:text-orange-400'}`}>{mType}</span>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); toggleSelect(e, p.id); }} 
+                                            className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-xs font-bold transition-all uppercase tracking-widest shadow-sm hover:shadow-md ${isSelected ? 'bg-blue-600 text-white border-blue-500' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-gray-200 dark:border-white/10 hover:text-slate-900 dark:hover:text-white'}`}
+                                        >
+                                            {isSelected && <CheckCircle size={14} />}
+                                            {isSelected ? 'Selected' : 'Select'}
+                                        </button>
+                                        <div className="relative">
+                                            <button 
+                                                onClick={(e) => { 
+                                                    e.stopPropagation(); 
+                                                    setOpenMenuId(openMenuId === p.id ? null : p.id); 
+                                                }} 
+                                                onMouseDown={(e) => e.stopPropagation()}
+                                                className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
+                                            >
+                                                {isUploading ? <Loader2 size={16} className="animate-spin text-gold-500" /> : <MoreVertical size={16} />}
+                                            </button>
+                                            <ActionMenu isOpen={openMenuId === p.id} onClose={() => setOpenMenuId(null)} onAction={(action) => handleMenuAction(action, p)} isArchived={!!p.isArchived} direction="down" />
                                         </div>
                                     </div>
-                                    <div className="flex flex-wrap items-center gap-y-2 gap-x-2 mt-1 text-xs">
-                                        <div className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md ${style.colorBg} dark:bg-opacity-20 ${style.colorText} dark:text-gray-300 bg-opacity-50`}><span className="uppercase tracking-wider text-[10px]">{PRODUCT_CONFIGS[p.productType].label}</span></div>
-                                        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-tight ${mType === 'shopify' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800' : 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-100 dark:border-orange-800'}`}><span className="text-[9px]">{mType === 'shopify' ? 'Shopify' : 'Etsy'}</span></div>
-                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div className="flex-1 min-h-[0.5rem]"></div>
-                            
-                            {p._health.status !== 'SETUP' && (
-                                <div className="mb-2 mt-2">
-                                    <div className="flex items-center justify-between text-xs mb-1">
-                                        <span className="text-gray-500 dark:text-slate-400 font-medium">Est. Avg Profit</span>
-                                        <span className={`font-mono font-bold ${p._health.avgProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                            {formatCurrency(p._health.avgProfit)}
-                                        </span>
-                                    </div>
-                                    <div className="h-1.5 w-full bg-gray-100 dark:bg-navy-700 rounded-full overflow-hidden"><div className={`h-full rounded-full ${p._health.status === 'LOSS' ? 'bg-red-500' : 'bg-green-500'}`}></div></div>
-                                </div>
-                            )}
 
-                            {/* AUDIT INFO */}
-                            <div className="mt-2 pt-2 border-t border-gray-100/50 dark:border-white/5 text-[10px] text-gray-400 dark:text-slate-500 flex items-center justify-between">
-                                <div className="flex items-center gap-1.5" title="Last Editor">
-                                    <UserCircle2 size={12} className="text-gray-300 dark:text-slate-600" />
-                                    <span className="truncate max-w-[80px]">{p.lastEditorName || '—'}</span>
+                                {/* Main Body */}
+                                <div className="flex-1 flex flex-col justify-center mb-6">
+                                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight break-words pr-4 mb-6 leading-tight">{p.name}</h2>
+                                    
+                                    {/* Profit Block */}
+                                    {!isSetup ? (
+                                        <div className="relative group/profit">
+                                            <div className={`absolute -inset-4 rounded-xl blur-md opacity-0 dark:opacity-30 ${isProfitable ? 'bg-emerald-500/20' : 'bg-rose-500/20'} border ${isProfitable ? 'border-emerald-500/10' : 'border-rose-500/10'}`}></div>
+                                            <div className={`relative flex flex-col pl-4 border-l-4 py-2 ${profitContainerStyle}`}>
+                                                <span className={`text-[11px] uppercase tracking-[0.2em] font-bold mb-1 ${isProfitable ? 'text-emerald-600/80 dark:text-emerald-400/80' : 'text-rose-600/80 dark:text-rose-400/80'}`}>Estimated Net Profit</span>
+                                                <div className="flex items-baseline gap-4">
+                                                    <span className={`text-4xl font-bold ${textGlow}`}>{formatCurrency(profit)}</span>
+                                                    <div className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wider ${marginBadgeStyle}`}>
+                                                        {isProfitable ? 'HEALTHY' : 'LOSS RISK'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="p-4 rounded-xl border border-dashed border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-center">
+                                            <span className="text-xs text-slate-400 uppercase tracking-widest font-bold">Setup Incomplete</span>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="flex items-center gap-1.5" title={`Synced: ${p.dbUpdatedAt ? new Date(p.dbUpdatedAt).toLocaleTimeString() : 'N/A'}`}>
-                                    <Clock size={12} className="text-gray-300 dark:text-slate-600" />
-                                    <span>{p.dbUpdatedAt ? new Date(p.dbUpdatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '—'}</span>
-                                </div>
-                            </div>
 
-                            <div className="mt-2 pt-2 border-t border-gray-100/50 dark:border-white/5 flex items-center justify-between text-xs text-gray-500 dark:text-slate-400 relative">
-                                <div className="flex items-center gap-2">{healthBadge}{p.activePriceBookId && (<span className="inline-block text-[10px] bg-gray-50 dark:bg-navy-800 border border-gray-100 dark:border-white/10 px-1.5 py-0.5 rounded truncate max-w-[80px]">{p.priceBooks.find(b => b.id === p.activePriceBookId)?.name || 'Book'}</span>)}</div>
-                                <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                                     <div className="relative"><button onClick={() => setOpenMenuId(openMenuId === p.id ? null : p.id)} className={`p-1.5 rounded-md transition-colors ${openMenuId === p.id ? 'bg-gray-100 dark:bg-navy-700 text-gray-900 dark:text-white' : 'text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 hover:bg-gray-50 dark:hover:bg-navy-800'}`}><MoreVertical size={16} /></button><ActionMenu isOpen={openMenuId === p.id} onClose={() => setOpenMenuId(null)} onAction={(action) => handleMenuAction(action, p)} isArchived={!!p.isArchived} direction="up" /></div>
+                                {/* Footer */}
+                                <div className="mt-auto pt-4 flex items-end justify-between border-t border-gray-100 dark:border-white/5">
+                                    <div className="flex-1"></div> {/* Spacer where Edit Details used to be */}
+
+                                    <div className="flex flex-col items-end gap-1 text-right pl-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-wider">{p.lastEditorName || 'User'}</span>
+                                                <span className="text-[10px] text-slate-400 dark:text-slate-500">Edited {p.lastModified ? new Date(p.lastModified).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '—'}</span>
+                                            </div>
+                                            <div className="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden border border-gray-200 dark:border-white/10 ring-2 ring-transparent group-hover/card:ring-emerald-500/20 transition-all flex items-center justify-center text-slate-400">
+                                                <UserCircle2 size={20} />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

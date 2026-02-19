@@ -8,13 +8,12 @@ import { ImportReviewModal, ImportResolution } from './components/ImportReviewMo
 import { StoreModal } from './components/StoreModal';
 import { DeleteStoreModal } from './components/DeleteStoreModal';
 import { Login } from './components/Login';
-import { ThemeToggle } from './components/ThemeToggle';
 import { ProjectSettings, KaratEnum, MarketplaceRates, Store } from './types';
 import { DEFAULT_PURITIES, DEFAULT_MARKETPLACE_RATES, DEFAULT_PROJECT } from './constants';
 import { migrateProject } from './utils/migrations';
 import { api } from './utils/api';
 import { supabase } from './utils/supabaseClient';
-import { Cloud, CloudOff, CheckCircle, LogOut } from 'lucide-react';
+import { Cloud, CloudOff, CheckCircle } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
 
 const ACTIVE_STORE_ID_KEY = 'gold-profit-active-store-id';
@@ -473,13 +472,13 @@ export default function App() {
         globalGoldPrice={activeStore?.goldPrice24k || 85}
         onUpdateGlobalGold={handleUpdateStoreGold}
         onBatchUpdate={handleBatchUpdateProjects}
+        onLogout={handleLogout}
       />
     );
   };
 
   return (
     <div className="min-h-screen bg-gray-50 text-slate-800 dark:bg-navy-950 dark:text-slate-100 transition-colors duration-300">
-      <ThemeToggle />
       
       {renderContent()}
 
@@ -525,16 +524,6 @@ export default function App() {
                   {toast.message}
               </div>
           )}
-
-          {/* Logout Button */}
-          <button 
-              onClick={handleLogout}
-              className="fixed top-4 right-16 z-50 flex items-center gap-2 px-3 py-2 bg-white/90 dark:bg-navy-900/90 backdrop-blur-sm border border-gray-200 dark:border-white/10 rounded-lg shadow-sm text-xs font-bold text-gray-500 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all group"
-              title="Sign out and clear local data"
-          >
-              <LogOut size={14} className="group-hover:scale-110 transition-transform" />
-              <span className="hidden md:inline">Log Out</span>
-          </button>
 
           <ConnectionStatus />
         </>
